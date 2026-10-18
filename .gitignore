@@ -21,8 +21,3 @@
 /Cartas*Ri Happy_files/js*
 /Cartas*Ri Happy_files/saved_resource
 /Cartas*Ri Happy_files/saved_resource*
-
-# The local-only admin panel contains a password in its JavaScript and has no server-side authentication.
-/admin.html
-/admin.css
-/admin.js
