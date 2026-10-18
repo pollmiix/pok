@@ -1,0 +1,28 @@
+# Local audit and previews are not part of the storefront source.
+/AUDITORIA-LOJA.md
+/checkout-logo-white-preview.png
+/mobile-preview.png
+/product-detail-preview.png
+
+# Keep the product images used by the catalog, but leave the downloaded source-site files out.
+/Cartas*Ri Happy_files/*.download
+/Cartas*Ri Happy_files/*.html
+/Cartas*Ri Happy_files/*.css
+/Cartas*Ri Happy_files/*.txt
+/Cartas*Ri Happy_files/0
+/Cartas*Ri Happy_files/187213849
+/Cartas*Ri Happy_files/282188025583189
+/Cartas*Ri Happy_files/7uj3duobz8
+/Cartas*Ri Happy_files/analytics
+/Cartas*Ri Happy_files/analytics*
+/Cartas*Ri Happy_files/dsp
+/Cartas*Ri Happy_files/init
+/Cartas*Ri Happy_files/js
+/Cartas*Ri Happy_files/js*
+/Cartas*Ri Happy_files/saved_resource
+/Cartas*Ri Happy_files/saved_resource*
+
+# The local-only admin panel contains a password in its JavaScript and has no server-side authentication.
+/admin.html
+/admin.css
+/admin.js

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" type="image/jpeg" href="./assets/walk-cards-logo-footer.jpg">
+  <title>Walk Cards | Cartas colecionáveis Pokémon</title>
+  <meta name="description" content="Consulte o catálogo de cartas e produtos colecionáveis Pokémon da Walk Cards. Confirme preço, estoque e entrega com a loja antes de pedir.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Walk Cards | Cartas colecionáveis Pokémon">
+  <meta property="og:description" content="Consulte o catálogo da Walk Cards e confirme preço, estoque e entrega com a loja.">
+  <meta name="robots" content="index,follow">
+  <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Organization","name":"Walk Cards","legalName":"Time Walk Cards Colecionaveis LTDA","taxID":"19.271.540/0001-38","email":"timewcolecionaveis@gmail.com","telephone":"+55-11-99398-3387","address":{"@type":"PostalAddress","streetAddress":"Avenida Antonio Carlos Costa, 1001, Setor 2","addressLocality":"Osasco","addressRegion":"SP","postalCode":"06053-014","addressCountry":"BR"}}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./store.css">
+  <script src="./catalog.js" defer></script>
+  <script src="./catalog-galleries.js" defer></script>
+  <script src="./google-auth-config.js" defer></script>
+  <script src="https://accounts.google.com/gsi/client" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.4.4/qrcode.min.js" defer></script>
+  <script src="./pix-qr.js" defer></script>
+  <script src="./store.js" defer></script>
+</head>
+<body>
+  <svg class="image-filters" aria-hidden="true" focusable="false">
+    <filter id="remove-logo-black" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  1.15 1.15 1.15 0 -.1"></feColorMatrix>
+    </filter>
+  </svg>
+  <header class="store-header">
+    <a class="store-brand" href="./index.html" aria-label="Walk Cards, início">
+      <img class="store-brand-logo" src="./assets/walk-cards-logo-footer.jpg" alt="Walk Cards">
+    </a>
+    <label class="store-search">
+      <span aria-hidden="true">⌕</span>
+      <input id="store-search" type="search" placeholder="Buscar carta, coleção ou produto..." aria-label="Buscar produto">
+    </label>
+    <button class="account-button" id="open-account" type="button" aria-label="Informações da loja">
+      <svg aria-hidden="true" viewBox="0 0 32 32"><circle cx="16" cy="9" r="6.5"/><path d="M3.5 28c.8-6.3 5.7-10 12.5-10s11.7 3.7 12.5 10c-7 3.4-18 3.4-25 0Z"/></svg>
+    </button>
+    <button class="header-icon-button" id="show-favorites" type="button" aria-label="Ver favoritos" aria-pressed="false">
+      <svg aria-hidden="true" viewBox="0 0 32 32"><path d="M16 27S3 19 3 10.5C3 5.3 9.4 3 16 10c6.6-7 13-4.7 13 0.5C29 19 16 27 16 27Z"/></svg><b id="favorites-count">0</b>
+    </button>
+    <button class="cart-button" id="open-cart" type="button" aria-label="Carrinho"><svg aria-hidden="true" viewBox="0 0 32 32"><path d="M2 4h4l4 18h17l4-13H8M12 26a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm13 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"/></svg><span>Carrinho</span><b id="cart-count">0</b></button>
+  </header>
+
+  <main>
+    <nav class="mobile-breadcrumb" aria-label="Trilha de navegação">
+      <a href="./index.html">Início</a><span aria-hidden="true">/</span><span aria-current="page">Pokemon</span>
+    </nav>
+    <section class="hero" aria-label="Pokemon 30th anniversary">
+      <img class="hero-banner" src="./assets/banner-celebracao-30-anos.jpg" alt="Celebracao de 30 anos Pokemon, com produtos especiais e cartas colecionaveis">
+    </section>
+    <nav class="mobile-categories" aria-label="Categorias">
+      <a class="is-current" href="#lancamentos" aria-current="page">lançamento</a>
+      <a href="#mais-vendidos">mais vendidos</a>
+      <a href="#bonecos">bonecos</a>
+      <a href="#blocos">blocos</a>
+      <a href="#gift-card">gift card</a>
+    </nav>
+
+    <section class="launch-section" id="lancamentos" aria-label="Seleção da loja">
+      <div class="launch-carousel">
+        <button class="launch-arrow launch-arrow-previous" type="button" data-carousel-target="launch-products" data-carousel-step="-1" aria-label="Ver produtos anteriores">‹</button>
+        <div class="launch-products" id="launch-products" aria-label="Produtos selecionados pela loja"></div>
+        <button class="launch-arrow launch-arrow-next" type="button" data-carousel-target="launch-products" data-carousel-step="1" aria-label="Ver próximos produtos">›</button>
+      </div>
+    </section>
+
+    <section class="best-sellers-section" id="mais-vendidos" aria-label="Outros produtos selecionados">
+      <div class="best-sellers-carousel">
+        <button class="launch-arrow launch-arrow-previous" type="button" data-carousel-target="best-seller-products" data-carousel-step="-1" aria-label="Ver produtos anteriores">‹</button>
+        <div class="launch-products" id="best-seller-products" aria-label="Outros produtos selecionados"></div>
+        <button class="launch-arrow launch-arrow-next" type="button" data-carousel-target="best-seller-products" data-carousel-step="1" aria-label="Ver próximos produtos">›</button>
+      </div>
+    </section>
+
+    <section class="toy-section" id="bonecos" aria-label="Bonecos e brinquedos Pokémon">
+      <div class="toy-carousel">
+        <button class="launch-arrow launch-arrow-previous" type="button" data-carousel-target="toy-products" data-carousel-step="-1" aria-label="Ver bonecos anteriores">‹</button>
+        <div class="launch-products" id="toy-products" aria-label="Bonecos e brinquedos Pokémon"></div>
+        <button class="launch-arrow launch-arrow-next" type="button" data-carousel-target="toy-products" data-carousel-step="1" aria-label="Ver próximos bonecos">›</button>
+      </div>
+    </section>
+
+    <section class="blocks-section" id="blocos" aria-label="Blocos de montar Pokémon">
+      <div class="blocks-carousel">
+        <button class="launch-arrow launch-arrow-previous" type="button" data-carousel-target="block-products" data-carousel-step="-1" aria-label="Ver blocos anteriores">‹</button>
+        <div class="launch-products" id="block-products" aria-label="Blocos de montar Pokémon"></div>
+        <button class="launch-arrow launch-arrow-next" type="button" data-carousel-target="block-products" data-carousel-step="1" aria-label="Ver próximos blocos">›</button>
+      </div>
+    </section>
+
+    <section class="gift-card-section" id="gift-card" aria-label="Gift Cards Pokémon">
+      <div class="gift-card-carousel">
+        <button class="launch-arrow launch-arrow-previous" type="button" data-carousel-target="gift-card-products" data-carousel-step="-1" aria-label="Ver gift cards anteriores">‹</button>
+        <div class="launch-products" id="gift-card-products" aria-label="Gift cards digitais"></div>
+        <button class="launch-arrow launch-arrow-next" type="button" data-carousel-target="gift-card-products" data-carousel-step="1" aria-label="Ver próximos gift cards">›</button>
+      </div>
+    </section>
+
+    <section class="catalog-section" id="catalogo">
+      <div class="catalog-layout">
+        <aside class="catalog-sidebar">
+          <div class="catalog-heading">
+            <div><h2>Pokemon</h2><span class="catalog-total" id="catalog-total">0 produtos</span></div>
+          </div>
+          <div class="catalog-filters" aria-label="Filtros do catálogo">
+            <strong>Filtrar por...</strong>
+            <button class="catalog-filter" type="button" data-catalog-filter="lowest-price" aria-pressed="false"><span class="filter-switch" aria-hidden="true"></span><span>Menores Preços</span></button>
+            <button class="catalog-filter" type="button" data-catalog-filter="best-sellers" aria-pressed="false"><span class="filter-switch" aria-hidden="true"></span><span>Os Mais Vendidos</span></button>
+            <div class="price-filter">
+              <strong>Faixa de preço</strong>
+              <div class="price-filter-values"><span id="minimum-price-label">R$ 0,00</span><span id="maximum-price-label">R$ 0,00</span></div>
+              <div class="price-range-controls">
+                <input id="minimum-price" type="range" aria-label="Preço mínimo" step="0.01">
+                <input id="maximum-price" type="range" aria-label="Preço máximo" step="0.01">
+              </div>
+              <div class="price-filter-bounds"><span id="price-floor-label">R$ 0,00</span><span id="price-ceiling-label">R$ 0,00</span></div>
+            </div>
+          </div>
+        </aside>
+        <div class="catalog-results">
+          <div class="catalog-toolbar">
+            <label class="catalog-inline-search"><span aria-hidden="true">⌕</span><input id="catalog-search" type="search" placeholder="Buscar nesta seleção..." aria-label="Buscar nesta seleção"></label>
+            <label class="catalog-sort-label" for="catalog-sort">Ordenar:
+              <select id="catalog-sort">
+                <option value="relevance" selected>Relevância</option>
+                <option value="price-asc">Menor preço</option>
+                <option value="price-desc">Maior preço</option>
+                <option value="best-sellers">Mais vendidos</option>
+                <option value="name">Nome (A-Z)</option>
+              </select>
+            </label>
+          </div>
+          <div class="product-grid" id="store-products"></div>
+          <div class="no-products hidden" id="no-products">Não encontramos produtos com essa busca.</div>
+          <button class="load-more hidden" id="load-more" type="button">Mostrar mais produtos</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="store-footer">
+    <section class="footer-payment-security" aria-label="Pagamentos disponíveis e segurança">
+      <div class="footer-payment-group">
+        <h2>Pagamentos disponíveis</h2>
+        <div class="footer-payment-options">
+          <div class="footer-payment-option"><img src="./assets/credito.svg" alt="Cartão de crédito"></div>
+          <div class="footer-payment-option"><img src="./assets/nupay.svg" alt="NuPay, crédito ou débito"></div>
+          <div class="footer-payment-option"><img src="./assets/pix.svg" alt="Pix"></div>
+          <div class="footer-payment-option"><img src="./assets/pix-parcelado.svg" alt="Pix parcelado"></div>
+        </div>
+      </div>
+      <div class="footer-security-group">
+        <h2>Segurança e certificações</h2>
+        <div class="footer-security-options">
+          <div class="security-badge conf-badge"><strong><span class="conf-spark">◉</span> Confì</strong><b>LOJA CONFIÁVEL</b><span>RIHAPPY</span><small>16-10-2026</small></div>
+          <div class="security-badge vtex-badge"><strong><span>▼</span> VTEX</strong><b><i>PCI</i> CERTIFIED</b></div>
+          <div class="security-badge tuna-badge"><strong><span>♧</span> TUNA</strong><b>PARCEIRA<br>PAGAMENTO<br>VIA PIX</b></div>
+        </div>
+      </div>
+    </section>
+    <a class="store-brand footer-brand" href="./index.html" aria-label="Walk Cards, início"><img class="store-brand-logo" src="./assets/walk-cards-logo-footer.jpg" alt="Walk Cards"></a>
+    <nav class="store-footer-links" aria-label="Informações da loja">
+      <a href="/sobre-nos/">Sobre nós</a><a href="/contato/">Contato</a><a href="/politica-de-privacidade/">Privacidade</a><a href="/politica-de-envio/">Envio</a><a href="/trocas-devolucoes/">Trocas e devoluções</a><a href="/termos-de-uso/">Termos</a>
+    </nav>
+    <div class="store-footer-contact"><strong>Time Walk Cards Colecionáveis LTDA · CNPJ 19.271.540/0001-38</strong><span>Avenida Antonio Carlos Costa, 1001, Setor 2, Bela Vista, Osasco/SP · CEP 06053-014</span><span><a href="mailto:timewcolecionaveis@gmail.com">timewcolecionaveis@gmail.com</a></span></div>
+    <p>Loja em preparação. Consulte preço, estoque, entrega e pagamento antes do pedido. As compras ainda não são processadas por este site.</p>
+  </footer>
+
+  <dialog class="product-detail-dialog" id="product-detail-dialog" aria-labelledby="product-detail-title">
+    <header class="store-header product-detail-store-header">
+      <a class="store-brand" href="./index.html" aria-label="Walk Cards, início"><img class="store-brand-logo" src="./assets/walk-cards-logo-footer.jpg" alt="Walk Cards"></a>
+      <label class="store-search"><span aria-hidden="true">⌕</span><input id="detail-store-search" type="search" placeholder="Buscar carta, coleção ou produto..." aria-label="Buscar produto"></label>
+      <button class="account-button" id="detail-open-account" type="button" aria-label="Faça seu login, ou cadastre-se"><svg aria-hidden="true" viewBox="0 0 32 32"><circle cx="16" cy="9" r="6.5"/><path d="M3.5 28c.8-6.3 5.7-10 12.5-10s11.7 3.7 12.5 10c-7 3.4-18 3.4-25 0Z"/></svg><span>Faça seu login,<br>ou cadastre-se</span></button>
+      <button class="header-icon-button" id="detail-show-favorites" type="button" aria-label="Ver favoritos" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 32 32"><path d="M16 27S3 19 3 10.5C3 5.3 9.4 3 16 10c6.6-7 13-4.7 13 0.5C29 19 16 27 16 27Z"/></svg><b id="detail-favorites-count">0</b></button>
+      <button class="cart-button" id="detail-open-cart" type="button" aria-label="Carrinho"><svg aria-hidden="true" viewBox="0 0 32 32"><path d="M2 4h4l4 18h17l4-13H8M12 26a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm13 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"/></svg><span>Carrinho</span><b id="detail-cart-count">0</b></button>
+    </header>
+    <button class="close-dialog product-detail-close" type="button" data-close-product aria-label="Fechar detalhes">×</button>
+    <div class="product-detail-layout">
+      <div class="product-detail-gallery" id="product-detail-gallery">
+        <div class="product-gallery-thumbnails hidden" id="product-gallery-thumbnails" aria-label="Fotos do produto"></div>
+        <div class="product-detail-photo" id="product-detail-photo"></div>
+      </div>
+      <section class="product-detail-info">
+        <span class="section-kicker">DETALHES DO PRODUTO</span>
+        <div class="product-detail-title-row">
+          <h2 id="product-detail-title"></h2>
+          <button class="favorite-button product-detail-favorite" id="product-detail-favorite" type="button" data-detail-favorite aria-label="Adicionar aos favoritos" aria-pressed="false">♡</button>
+        </div>
+        <strong class="product-detail-price" id="product-detail-price"></strong>
+        <small class="detail-price-note">Preço de referência; confirme o valor atualizado com a loja.</small>
+        <p class="product-detail-stock" id="product-detail-stock"></p>
+        <div class="product-detail-pix">Formas de pagamento: consulte a loja</div>
+        <div class="product-detail-description">
+          <h3>Descrição</h3>
+          <p id="product-detail-description"></p>
+        </div>
+        <div class="product-detail-specifications">
+          <h3>Ficha técnica</h3>
+          <dl id="product-detail-specifications"></dl>
+        </div>
+        <div class="product-detail-actions">
+          <button class="product-detail-buy" id="product-detail-buy" type="button">COMPRAR AGORA</button>
+          <button class="product-detail-add" id="product-detail-add" type="button">⊕ ADICIONAR AO CARRINHO</button>
+        </div>
+      </section>
+    </div>
+    <section class="related-products-section" aria-labelledby="related-products-title">
+      <div class="related-products-heading">
+        <h2 id="related-products-title">Quem viu, viu também</h2>
+        <div><button type="button" data-related-scroll="-1" aria-label="Produtos anteriores">‹</button><button type="button" data-related-scroll="1" aria-label="Próximos produtos">›</button></div>
+      </div>
+      <div class="related-products-track" id="related-products"></div>
+    </section>
+    <footer class="store-footer product-detail-footer">
+    <section class="footer-payment-security" aria-label="Pagamentos disponíveis e segurança">
+      <div class="footer-payment-group">
+        <h2>Pagamentos disponíveis</h2>
+        <div class="footer-payment-options">
+          <div class="footer-payment-option"><img src="./assets/credito.svg" alt="Cartão de crédito"></div>
+          <div class="footer-payment-option"><img src="./assets/nupay.svg" alt="NuPay, crédito ou débito"></div>
+          <div class="footer-payment-option"><img src="./assets/pix.svg" alt="Pix"></div>
+          <div class="footer-payment-option"><img src="./assets/pix-parcelado.svg" alt="Pix parcelado"></div>
+        </div>
+      </div>
+      <div class="footer-security-group">
+        <h2>Segurança e certificações</h2>
+        <div class="footer-security-options">
+          <div class="security-badge conf-badge"><strong><span class="conf-spark">◉</span> Confì</strong><b>LOJA CONFIÁVEL</b><span>RIHAPPY</span><small>16-10-2026</small></div>
+          <div class="security-badge vtex-badge"><strong><span>▼</span> VTEX</strong><b><i>PCI</i> CERTIFIED</b></div>
+          <div class="security-badge tuna-badge"><strong><span>♧</span> TUNA</strong><b>PARCEIRA<br>PAGAMENTO<br>VIA PIX</b></div>
+        </div>
+      </div>
+    </section>
+      <a class="store-brand footer-brand" href="./index.html" aria-label="Walk Cards, início"><img class="store-brand-logo" src="./assets/walk-cards-logo-footer.jpg" alt="Walk Cards"></a>
+      <nav class="store-footer-links" aria-label="Informações da loja">
+        <a href="/sobre-nos/">Sobre nós</a><a href="/contato/">Contato</a><a href="/politica-de-privacidade/">Privacidade</a><a href="/politica-de-envio/">Envio</a><a href="/trocas-devolucoes/">Trocas e devoluções</a><a href="/termos-de-uso/">Termos</a>
+      </nav>
+      <div class="store-footer-contact"><strong>Time Walk Cards Colecionáveis LTDA · CNPJ 19.271.540/0001-38</strong><span>Avenida Antonio Carlos Costa, 1001, Setor 2, Bela Vista, Osasco/SP · CEP 06053-014</span><span><a href="mailto:timewcolecionaveis@gmail.com">timewcolecionaveis@gmail.com</a></span></div>
+      <p>Loja em preparação. Consulte preço, estoque, entrega e pagamento antes do pedido. As compras ainda não são processadas por este site.</p>
+    </footer>
+  </dialog>
+
+  <dialog class="checkout-dialog" id="checkout-dialog">
+    <section id="cart-view">
+      <header class="cart-checkout-header">
+        <a class="store-brand" href="./index.html" aria-label="Walk Cards, início"><img class="store-brand-logo checkout-brand-logo" src="./assets/walk-cards-logo-white.jpg" alt="Walk Cards"></a>
+        <nav class="checkout-steps" aria-label="Etapas do pedido">
+          <span class="is-current"><b>1</b>Carrinho</span><i></i><span><b>2</b>Identificação</span><i></i><span><b>3</b>Pagamento</span>
+        </nav>
+        <div class="cart-header-actions">
+          <button class="cart-header-indicator" type="button" aria-label="Carrinho com 0 itens"><svg aria-hidden="true" viewBox="0 0 32 32"><path d="M2 4h4l4 18h17l4-13H8M12 26a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm13 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"/></svg><span>Carrinho</span><b id="cart-checkout-count">0</b></button>
+          <button class="close-dialog" type="button" data-close-checkout aria-label="Fechar">×</button>
+        </div>
+      </header>
+      <div class="cart-wide-content">
+        <section class="cart-table-card">
+          <div class="cart-table-heading"><strong>Produto</strong><strong>Entrega</strong><strong>Preço</strong><strong>Quantidade</strong><strong>Total</strong><span></span></div>
+          <div class="cart-items-area">
+            <div class="cart-lines" id="cart-lines"></div>
+            <div class="cart-empty hidden" id="cart-empty">Seu carrinho está vazio. Escolha produtos para continuar.</div>
+          </div>
+        </section>
+        <div class="cart-lower-grid">
+          <div class="cart-delivery-column">
+            <section class="cart-delivery-card">
+              <h3>Entrega</h3>
+          <div class="delivery-method-card"><strong>Frete</strong><span id="cart-delivery-price">A combinar</span><small>Consulte valor, regiões atendidas e prazo antes do pedido.</small></div>
+            </section>
+            <section class="cart-giftback"><h3>Como continuar</h3><p>Envie sua lista pelo WhatsApp para confirmar preço, estoque e entrega. O envio da mensagem não confirma um pedido.</p></section>
+          </div>
+          <section class="cart-summary-card">
+            <h3>Resumo do pedido</h3>
+            <button class="cart-coupon-toggle" id="cart-coupon-toggle" type="button" aria-expanded="false" aria-controls="cart-coupon-row">adicionar cupom de desconto</button>
+            <div class="coupon-row hidden" id="cart-coupon-row">
+              <label for="cart-coupon-code">Cupom de desconto</label>
+              <div class="coupon-input"><input id="cart-coupon-code" type="text" placeholder="Digite seu cupom" autocomplete="off"><button id="cart-coupon-apply" type="button">Aplicar</button></div>
+            </div>
+            <div class="cart-breakdown">
+              <div><span>Subtotal dos produtos</span><strong id="cart-subtotal">R$ 0,00</strong></div>
+              <div><span>Frete</span><strong id="cart-shipping">A combinar</strong></div>
+              <div class="cart-final-total"><span>Subtotal (sem frete)</span><strong id="cart-total">R$ 0,00</strong></div>
+              <small id="cart-payment-note">Preço e forma de pagamento sujeitos à confirmação da loja.</small>
+            </div>
+            <button class="checkout-submit cart-continue" id="continue-checkout" type="button">continuar para pagamento</button>
+            <button class="add-more-items" id="add-more-items" type="button">Escolher mais produtos</button>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="buyer-view hidden" id="buyer-view">
+      <div class="dialog-heading">
+        <a class="store-brand checkout-identification-brand" href="./index.html" aria-label="Walk Cards, início"><img class="store-brand-logo checkout-brand-logo" src="./assets/walk-cards-logo-white.jpg" alt="Walk Cards"></a>
+        <nav class="checkout-steps" aria-label="Etapas do pedido">
+          <button class="checkout-step-link" id="back-to-cart" type="button"><b>1</b>Carrinho</button><i></i><span class="is-current"><b>2</b>Identificação</span><i></i><span><b>3</b>Pagamento</span>
+        </nav>
+        <button class="close-dialog" type="button" data-close-checkout aria-label="Fechar">×</button>
+      </div>
+      <form id="checkout-form" class="delivery-form">
+        <section class="checkout-section">
+          <h3>Seus dados</h3>
+          <label class="checkout-fields-label">Nome completo<input id="buyer-name" name="name" type="text" maxlength="80" autocomplete="name" required></label>
+          <label class="checkout-fields-label">E-mail<input id="buyer-email" name="email" type="email" maxlength="120" autocomplete="email" required></label>
+          <label class="checkout-fields-label">WhatsApp<input id="buyer-phone" name="phone" type="tel" maxlength="25" autocomplete="tel" placeholder="(11) 99999-9999" required></label>
+        </section>
+        <section class="checkout-section">
+          <h3>Endereço de entrega</h3>
+          <div class="delivery-method-card"><strong>Frete</strong><span id="delivery-method-price">A combinar</span><small>Valor e prazo a confirmar com a loja.</small></div>
+          <label class="checkout-fields-label">CEP<input id="delivery-postal-code" name="postalCode" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" pattern="[0-9]{5}-?[0-9]{3}" title="Informe um CEP válido com 8 números." required></label>
+          <label class="checkout-fields-label">Endereço<input id="delivery-street" name="street" type="text" maxlength="120" autocomplete="address-line1" required></label>
+          <div class="delivery-fields-grid">
+            <label class="checkout-fields-label">Número<input id="delivery-number" name="number" type="text" maxlength="20" required></label>
+            <label class="checkout-fields-label">Complemento e referência <span>(opcional)</span><input id="delivery-complement" name="complement" type="text" maxlength="120" autocomplete="address-line2" placeholder="Apartamento, bloco..."></label>
+          </div>
+          <label class="checkout-fields-label">Bairro<input id="delivery-neighborhood" name="neighborhood" type="text" maxlength="80" required></label>
+          <div class="delivery-fields-grid">
+            <label class="checkout-fields-label">Cidade<input id="delivery-city" name="city" type="text" maxlength="80" autocomplete="address-level2" required></label>
+            <label class="checkout-fields-label">Estado
+              <select id="delivery-state" name="state" autocomplete="address-level1" required>
+                <option value="">Selecione</option>
+                <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option>
+                <option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option>
+                <option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
+                <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option>
+                <option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option>
+                <option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option>
+                <option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+              </select>
+            </label>
+          </div>
+          <label class="checkout-fields-label">Destinatário<input id="delivery-recipient" name="recipient" type="text" maxlength="80" autocomplete="name" required></label>
+        </section>
+        <section class="checkout-section delivery-order-summary">
+          <h3>Resumo do pedido</h3>
+          <div class="checkout-order-lines" id="checkout-order-lines"></div>
+          <div><span>Subtotal</span><strong id="delivery-subtotal">R$ 0,00</strong></div>
+          <div><span>Frete</span><strong id="delivery-shipping">A combinar</strong></div>
+          <div class="delivery-summary-total"><span>Subtotal sem frete</span><strong id="delivery-total">R$ 0,00</strong></div>
+        </section>
+        <p class="privacy-copy">O PIX corresponde ao subtotal dos produtos; o frete será confirmado à parte. Seus dados e o pedido ficam salvos somente neste navegador.</p>
+        <button class="checkout-submit" id="place-order" type="submit">Ir para o pagamento <span aria-hidden="true">→</span></button>
+      </form>
+    </section>
+
+    <section class="payment-view hidden" id="payment-view">
+      <div class="dialog-heading">
+        <nav class="checkout-steps" aria-label="Etapas do pedido">
+          <span><b>1</b>Carrinho</span><i></i><span><b>2</b>Identificação</span><i></i><span class="is-current"><b>3</b>Pagamento</span>
+        </nav>
+        <button class="close-dialog" type="button" data-close-checkout aria-label="Fechar">×</button>
+      </div>
+      <h2 class="payment-title">Faça o PIX</h2>
+      <div class="pending-banner" id="payment-pending-banner"><span>◷</span><div><strong>Aguardando confirmação</strong><small>A Walk Cards precisa conferir o recebimento do PIX. O pedido fica salvo somente neste navegador.</small></div></div>
+      <div class="payment-summary"><span id="payment-order-id"></span><strong id="payment-total"></strong></div>
+      <p class="payment-delivery" id="payment-delivery"></p>
+      <p class="payment-delivery">O valor do QR PIX cobre os produtos; o frete ainda será combinado e não está incluído.</p>
+      <div class="payment-qr-wrap" id="payment-qr-wrap"><canvas id="payment-pix-qr" aria-label="QR Code PIX para pagamento"></canvas></div>
+      <button class="checkout-submit" id="payment-reported-button" type="button">Já fiz o pagamento</button>
+      <div class="payment-thanks hidden" id="payment-thanks" role="status"><strong>Obrigado por avisar!</strong><p>A loja vai conferir o recebimento do PIX. Seu pedido continua aguardando confirmação.</p></div>
+      <button class="checkout-submit" type="button" data-close-checkout>Voltar à loja</button>
+    </section>
+  </dialog>
+
+  <dialog class="mini-cart-dialog" id="mini-cart-dialog" aria-labelledby="mini-cart-title">
+    <header class="mini-cart-header">
+      <h2 id="mini-cart-title">Meu carrinho</h2>
+      <button class="close-dialog" type="button" data-close-mini-cart aria-label="Fechar carrinho">×</button>
+    </header>
+    <div class="mini-cart-summary">
+      <div class="mini-shipping-progress"><p id="mini-shipping-message">Você ganhou Frete Grátis na entrega Econômica!</p><div class="mini-shipping-line"><span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5h12v12H2zM14 9h4l4 4v4h-8zM6 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg></div><button id="mini-shipping-rules" type="button">Ver regras</button></div>
+      <div class="mini-coupon-row"><label for="mini-coupon-code">Cupom de desconto</label><div class="mini-coupon-input"><input id="mini-coupon-code" type="text" placeholder="digite aqui" autocomplete="off"><button id="mini-coupon-apply" type="button">Aplicar</button></div></div>
+      <div class="mini-cart-totals"><div><span>Subtotal</span><strong id="mini-cart-subtotal">R$ 0,00</strong></div><div><span>Frete</span><strong id="mini-cart-shipping">A combinar</strong></div><div class="mini-cart-total"><span>Total (sem frete)</span><strong id="mini-cart-total">R$ 0,00</strong></div></div>
+      <button class="mini-cart-full-button" id="view-full-cart" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3m-12 0h14v11H5z"/></svg> Ver carrinho</button>
+      <button class="mini-cart-more-button" id="mini-cart-more" type="button">Adicionar mais itens</button>
+    </div>
+    <div class="mini-cart-lines" id="mini-cart-lines"></div>
+    <p class="mini-cart-empty hidden" id="mini-cart-empty">Seu carrinho está vazio.</p>
+  </dialog>
+
+  <dialog class="account-dialog" id="account-dialog" aria-labelledby="account-dialog-title">
+    <button class="close-dialog account-close" type="button" data-close-account aria-label="Fechar">×</button>
+    <h2 id="account-dialog-title">Entrar com Google</h2>
+    <p>Use sua conta Google para entrar.</p>
+    <div class="google-signin-button" id="google-signin-button"></div>
+    <p class="account-status" id="account-status" role="status"></p>
+  </dialog>
+
+  <div class="store-toast" id="store-toast" role="status" aria-live="polite"></div>
+</body>
+</html>
+
+
+
+
+
+

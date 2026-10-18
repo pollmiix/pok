@@ -1,0 +1,8 @@
+<svg id="ico-linkedin" xmlns="http://www.w3.org/2000/svg" width="83.519" height="83.519" viewBox="0 0 83.519 83.519">
+  <ellipse id="Ellipse_47" data-name="Ellipse 47" cx="41.759" cy="41.759" rx="41.759" ry="41.759" fill="#fff"/>
+  <g id="linkedin" transform="translate(22.975 17.809)">
+    <path id="Path_10" data-name="Path 10" d="M35.665,36.364v0h.011V20.935c0-7.547-1.625-13.361-10.448-13.361a9.16,9.16,0,0,0-8.25,4.534h-.123V8.279H8.489V36.363H17.2V22.456c0-3.661.694-7.2,5.228-7.2,4.468,0,4.534,4.179,4.534,7.437V36.364Z" transform="translate(6.318 5.629)" fill="#1959ec"/>
+    <path id="Path_11" data-name="Path 11" d="M.4,7.977H9.118V36.061H.4Z" transform="translate(0.298 5.932)" fill="#1959ec"/>
+    <path id="Path_12" data-name="Path 12" d="M5.051,0A5.075,5.075,0,1,0,10.1,5.051,5.053,5.053,0,0,0,5.051,0Z" transform="translate(0 0)" fill="#1959ec"/>
+  </g>
+</svg>
