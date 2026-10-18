@@ -1,8 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "admin.php": {
+    "api/admin.php": {
       "runtime": "vercel-php@0.9.0"
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/admin.php",
+      "destination": "/api/admin.php"
+    }
+  ]
 }
