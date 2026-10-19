@@ -3,6 +3,7 @@ const path = require('node:path');
 
 const PRODUCTS_KEY = 'walkcards:products';
 const SITE_URL = 'https://walkcards.online/';
+const AVAILABLE_PRODUCT_IDS = new Set(Array.from({ length: 23 }, (_, index) => `imported-${index + 1}`));
 
 function xml(value) {
   return String(value ?? '').replace(/[<>&"']/g, (character) => ({
@@ -82,11 +83,24 @@ module.exports = async function handler(_req, res) {
     const byId = new Map(catalog.map((product) => [product.id, product]));
     for (const product of await sharedProducts()) {
       const local = byId.get(product.id) || {};
-      byId.set(product.id, {
+      const merged = {
         ...local,
         ...product,
         images: Array.isArray(product.images) && product.images.length ? product.images : local.images
-      });
+      };
+      if (AVAILABLE_PRODUCT_IDS.has(product.id)
+        && !(merged.stockVerified === true && Number.isInteger(merged.stock))) {
+        merged.stock = 1;
+        merged.stockVerified = true;
+      }
+      byId.set(product.id, merged);
+    }
+    for (const id of AVAILABLE_PRODUCT_IDS) {
+      const product = byId.get(id);
+      if (product && !(product.stockVerified === true && Number.isInteger(product.stock))) {
+        product.stock = 1;
+        product.stockVerified = true;
+      }
     }
     const items = [...byId.values()].map(productXml).filter(Boolean).join('\n');
     res.statusCode = 200;

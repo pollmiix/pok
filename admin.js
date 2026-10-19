@@ -8,13 +8,15 @@ function initializeDashboard() {
   const catalog = Array.isArray(window.STORE_CATALOG) ? window.STORE_CATALOG : [];
   // Correspondências marcadas como mais vendidas na página de Pokémon da Ri Happy.
   const riHappyBestSellerIds = new Set(Array.from({ length: 19 }, (_, index) => `imported-${index + 1}`));
+  const availableProductIds = new Set(Array.from({ length: 23 }, (_, index) => `imported-${index + 1}`));
   const sourceProducts = catalog.map((product, index) => ({
     ...product,
     id: `imported-${index + 1}`,
     name: product.name,
     price: product.price,
     image: product.image,
-    stockVerified: false,
+    stockVerified: availableProductIds.has(`imported-${index + 1}`),
+    ...(availableProductIds.has(`imported-${index + 1}`) ? { stock: 1 } : {}),
     bestSeller: riHappyBestSellerIds.has(`imported-${index + 1}`)
   }));
 
@@ -43,6 +45,11 @@ function initializeDashboard() {
           if (match) {
             mergedProduct.stockVerified = mergedProduct.stockVerified === true && Number.isInteger(mergedProduct.stock);
             if (!mergedProduct.stockVerified) delete mergedProduct.stock;
+          }
+          if (availableProductIds.has(product.id)
+            && !(mergedProduct.stockVerified === true && Number.isInteger(mergedProduct.stock))) {
+            mergedProduct.stock = 1;
+            mergedProduct.stockVerified = true;
           }
           return mergedProduct;
         });
@@ -152,14 +159,22 @@ function initializeDashboard() {
       const sharedProducts = shared.products.map((product) => {
         const base = sourceProducts.find((entry) => entry.id === product.id);
         const refreshEtbPrice = base?.id === "imported-4" && Number(product.price) === 599.99;
-        return base ? { ...base, ...product, ...(refreshEtbPrice ? { price: base.price } : {}), name: base.name, image: base.image } : product;
+        const merged = base ? { ...base, ...product, ...(refreshEtbPrice ? { price: base.price } : {}), name: base.name, image: base.image } : product;
+        if (availableProductIds.has(product.id)
+          && !(merged.stockVerified === true && Number.isInteger(merged.stock))) {
+          merged.stock = 1;
+          merged.stockVerified = true;
+        }
+        return merged;
       });
       const sharedProductIds = new Set(sharedProducts.map((product) => product.id));
       const missingProducts = sourceProducts.filter((product) => !sharedProductIds.has(product.id));
       const catalogNeedsSync = shared.products.some((product) => {
         const base = sourceProducts.find((entry) => entry.id === product.id);
         return base && (product.name !== base.name || product.image !== base.image
-          || (base.id === "imported-4" && Number(product.price) === 599.99));
+          || (base.id === "imported-4" && Number(product.price) === 599.99)
+          || (availableProductIds.has(product.id)
+            && !(product.stockVerified === true && Number.isInteger(product.stock))));
       });
       state.products = [...sharedProducts, ...missingProducts];
       state.sales = Array.isArray(shared.sales) ? shared.sales : [];

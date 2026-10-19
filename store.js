@@ -85,6 +85,7 @@
 
   // Produtos do catálogo local que correspondem aos itens destacados na página Pokémon da Ri Happy.
   const riHappyBestSellerIds = new Set(Array.from({ length: 19 }, (_, index) => `imported-${index + 1}`));
+  const availableProductIds = new Set(Array.from({ length: 23 }, (_, index) => `imported-${index + 1}`));
   const importedProducts = (Array.isArray(window.STORE_CATALOG) ? window.STORE_CATALOG : []).map((product, index) => {
     const id = `imported-${index + 1}`;
     const gallery = window.STORE_PRODUCT_GALLERIES?.[id];
@@ -95,7 +96,8 @@
       price: Number(product.price),
       image: product.image || "",
       images: Array.isArray(gallery) ? gallery.filter((image) => typeof image === "string" && image) : [],
-      stockVerified: false,
+      stockVerified: availableProductIds.has(id),
+      ...(availableProductIds.has(id) ? { stock: 1 } : {}),
       bestSeller: riHappyBestSellerIds.has(id)
     };
   });
