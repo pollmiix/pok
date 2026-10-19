@@ -200,10 +200,13 @@
       const shared = await response.json();
       if (!response.ok) throw new Error(shared.error || "Não foi possível carregar o catálogo atualizado.");
       if (!Array.isArray(shared.products)) return;
-      products = shared.products.map((product) => {
+      const sharedProducts = shared.products.map((product) => {
         const source = importedProducts.find((entry) => entry.id === product.id);
         return source ? { ...source, ...product, image: source.image, images: source.images } : product;
       });
+      const sharedProductIds = new Set(sharedProducts.map((product) => product.id));
+      const newCatalogProducts = importedProducts.filter((product) => !sharedProductIds.has(product.id));
+      products = [...sharedProducts, ...newCatalogProducts];
       dashboardState.products = products;
       cart = cart.filter((item) => products.some((product) => product.id === item.productId));
       localStorage.setItem(cartStorageKey, JSON.stringify(cart));

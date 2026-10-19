@@ -148,18 +148,21 @@ function initializeDashboard() {
         return;
       }
       const localSales = state.sales;
-      state.products = shared.products.map((product) => {
+      const sharedProducts = shared.products.map((product) => {
         const base = sourceProducts.find((entry) => entry.id === product.id);
         return base ? { ...base, ...product, image: base.image } : product;
       });
+      const sharedProductIds = new Set(sharedProducts.map((product) => product.id));
+      const missingProducts = sourceProducts.filter((product) => !sharedProductIds.has(product.id));
+      state.products = [...sharedProducts, ...missingProducts];
       state.sales = Array.isArray(shared.sales) ? shared.sales : [];
-      if (!state.sales.length && localSales.length) {
+      if (missingProducts.length || (!state.sales.length && localSales.length)) {
         const migration = await fetch("/api/store-data", {
           method: "PUT",
           headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken() },
-          body: JSON.stringify({ products: state.products, sales: localSales })
+          body: JSON.stringify({ products: state.products, sales: state.sales.length ? state.sales : localSales })
         });
-        if (migration.ok) state.sales = localSales;
+        if (migration.ok && !state.sales.length) state.sales = localSales;
       }
       localStorage.setItem(storageKey, JSON.stringify(state));
       render();
