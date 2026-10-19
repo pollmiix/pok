@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   "use strict";
 
   const dashboardStorageKey = "poke-central-dashboard-v1";
@@ -191,6 +191,26 @@
     } catch (error) {
       console.error("Não foi possível carregar os dados locais da loja.", error);
       showToast("O navegador não conseguiu ler os dados locais. Confira as permissões e recarregue.");
+    }
+  }
+
+  async function loadSharedProducts() {
+    try {
+      const response = await fetch("/api/store-data", { cache: "no-store" });
+      const shared = await response.json();
+      if (!response.ok) throw new Error(shared.error || "Não foi possível carregar o catálogo atualizado.");
+      if (!Array.isArray(shared.products)) return;
+      products = shared.products.map((product) => {
+        const source = importedProducts.find((entry) => entry.id === product.id);
+        return source ? { ...source, ...product, image: source.image, images: source.images } : product;
+      });
+      dashboardState.products = products;
+      cart = cart.filter((item) => products.some((product) => product.id === item.productId));
+      localStorage.setItem(cartStorageKey, JSON.stringify(cart));
+      renderProducts();
+      renderCart();
+    } catch (error) {
+      console.error("Não foi possível carregar o catálogo compartilhado.", error);
     }
   }
 
@@ -655,82 +675,49 @@
       showToast("Um dos produtos não tem estoque suficiente para essa quantidade. Atualize o carrinho.");
       return;
     }
-    const amount = orderTotal();
-    const order = {
-      id: `PC-${Date.now().toString().slice(-8)}`,
-      source: "store-checkout",
-      productId: items[0].productId,
-      productName: items.map((item) => `${item.quantity}× ${item.productName}`).join(", "),
-      items,
-      quantity: items.reduce((sum, item) => sum + item.quantity, 0),
-      subtotal: Number(cartTotal().toFixed(2)),
-      shipping: shippingTotal(),
-      amount,
-      customer,
-      email,
-      phone,
-      delivery,
-      createdAt: new Date().toISOString(),
-      status: "pending"
+    let amount = orderTotal();
+    let order = {
+      source: "store-checkout", items, customer, email, phone, delivery
     };
+    try {
+      window.PixQr.buildPixPayload({ key: pixSettings.key, owner: pixSettings.owner, amount });
+    } catch (error) {
+      console.error("Não foi possível validar a chave PIX.", error);
+      showToast(error.message || "Não foi possível gerar o QR Code PIX.");
+      return;
+    }
+    let sharedOrder;
+    try {
+      const response = await fetch("/api/store-data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(order)
+      });
+      sharedOrder = await response.json();
+      if (!response.ok) throw new Error(sharedOrder.error || "Não foi possível registrar o pedido compartilhado.");
+      order = sharedOrder.order;
+      amount = Number(order.amount);
+      if (Array.isArray(sharedOrder.products)) {
+        products = sharedOrder.products;
+        dashboardState.products = products;
+        renderProducts();
+      }
+    } catch (error) {
+      console.error("Não foi possível salvar o pedido no servidor.", error);
+      showToast(error.message || "Não foi possível registrar o pedido. Tente novamente.");
+      return;
+    }
 
     try {
       const pixPayload = window.PixQr.buildPixPayload({ key: pixSettings.key, owner: pixSettings.owner, amount });
       await window.PixQr.render($("#payment-pix-qr"), pixPayload, 220);
     } catch (error) {
       console.error("Não foi possível gerar o QR Code PIX do pedido.", error);
-      showToast(error.message || "Não foi possível gerar o QR Code PIX.");
+      showToast(error.message || "O pedido foi registrado, mas não foi possível gerar o QR Code PIX.");
       return;
     }
-
-    try {
-      const storedDashboard = localStorage.getItem(dashboardStorageKey);
-      let latestDashboard = dashboardState;
-      if (storedDashboard) {
-        const parsed = JSON.parse(storedDashboard);
-        if (!parsed || !Array.isArray(parsed.products) || !Array.isArray(parsed.sales)) {
-          throw new TypeError("Os dados locais do painel estão inválidos.");
-        }
-        latestDashboard = {
-          products: parsed.products.map((product) => {
-            const match = /^imported-(\d+)$/.exec(product.id);
-            const normalized = { ...product };
-            if (match && !(normalized.stockVerified === true && Number.isInteger(normalized.stock))) {
-              normalized.stockVerified = false;
-              delete normalized.stock;
-            }
-            return normalized;
-          }),
-          sales: parsed.sales.filter((sale) => sale.source === "store-checkout")
-        };
-      }
-      const nextDashboard = {
-        products: latestDashboard.products.map((product) => ({ ...product })),
-        sales: [...latestDashboard.sales]
-      };
-      for (const item of items) {
-        const product = nextDashboard.products.find((entry) => entry.id === item.productId);
-        if (!product) throw new Error(`O produto ${item.productName} não está mais no catálogo.`);
-        if (Number.isInteger(product.stock)) {
-          if (item.quantity > product.stock) {
-            showToast(`Estoque insuficiente para ${item.productName}. Atualize o carrinho.`);
-            return;
-          }
-          product.stock -= item.quantity;
-        }
-      }
-      nextDashboard.sales.push(order);
-      localStorage.setItem(dashboardStorageKey, JSON.stringify(nextDashboard));
-      dashboardState = nextDashboard;
-      products = nextDashboard.products;
-      cart = [];
-      localStorage.setItem(cartStorageKey, JSON.stringify(cart));
-    } catch (error) {
-      console.error("Não foi possível salvar o pedido neste navegador.", error);
-      showToast("O pedido não foi salvo. O armazenamento do navegador não está disponível.");
-      return;
-    }
-
+    cart = [];
+    localStorage.setItem(cartStorageKey, JSON.stringify(cart));
     $("#payment-order-id").textContent = `Pedido ${order.id}`;
     $("#payment-reported-button").dataset.orderId = order.id;
     $("#payment-total").textContent = money(amount);
@@ -753,6 +740,10 @@
   syncShowcaseFromLocation();
   renderProducts();
   renderCart();
+  loadSharedProducts();
+  window.setInterval(() => {
+    if (document.visibilityState === "visible") loadSharedProducts();
+  }, 15000);
 
   const accountDialog = $("#account-dialog");
   const accountStatus = $("#account-status");
@@ -1049,8 +1040,21 @@
   });
   $("#add-more-items").addEventListener("click", () => $("#checkout-dialog").close());
   $("#checkout-form").addEventListener("submit", createOrder);
-  $("#payment-reported-button").addEventListener("click", () => {
+  $("#payment-reported-button").addEventListener("click", async () => {
     const orderId = $("#payment-reported-button").dataset.orderId;
+    try {
+      const response = await fetch("/api/store-data", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: orderId, action: "reported" })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível avisar a loja.");
+    } catch (error) {
+      console.error("Não foi possível registrar o aviso de pagamento.", error);
+      showToast(error.message || "Não foi possível avisar a loja. Tente novamente.");
+      return;
+    }
     try {
       const saved = JSON.parse(localStorage.getItem(dashboardStorageKey) || "{}");
       const order = Array.isArray(saved.sales) ? saved.sales.find((sale) => sale.id === orderId) : null;

@@ -1,3 +1,4 @@
+
 function initializeDashboard() {
   "use strict";
 
@@ -113,14 +114,58 @@ function initializeDashboard() {
     }
   }
   loadSharedPixSettings();
-  function persist() {
+  async function persist() {
     try {
       localStorage.setItem(storageKey, JSON.stringify(state));
+      const response = await fetch("/api/store-data", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken() },
+        body: JSON.stringify({ products: state.products })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível sincronizar o catálogo.");
       return true;
     } catch (error) {
-      console.error("Não foi possível salvar os dados locais do painel.", error);
-      showToast("Não foi possível salvar no navegador. Confira o espaço disponível e as permissões.");
+      console.error("Não foi possível salvar os dados compartilhados do painel.", error);
+      showToast(error.message || "Não foi possível compartilhar os dados. Confira o Redis da Vercel.");
       return false;
+    }
+  }
+
+  async function loadSharedDashboardData() {
+    try {
+      const response = await fetch("/api/store-data", { cache: "no-store" });
+      const shared = await response.json();
+      if (!response.ok) throw new Error(shared.error || "Não foi possível carregar os dados compartilhados.");
+      if (!Array.isArray(shared.products)) {
+        const initialize = await fetch("/api/store-data", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken() },
+          body: JSON.stringify({ products: state.products, sales: state.sales })
+        });
+        const result = await initialize.json();
+        if (!initialize.ok) throw new Error(result.error || "Não foi possível iniciar o catálogo compartilhado.");
+        return;
+      }
+      const localSales = state.sales;
+      state.products = shared.products.map((product) => {
+        const base = sourceProducts.find((entry) => entry.id === product.id);
+        return base ? { ...base, ...product, image: base.image } : product;
+      });
+      state.sales = Array.isArray(shared.sales) ? shared.sales : [];
+      if (!state.sales.length && localSales.length) {
+        const migration = await fetch("/api/store-data", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken() },
+          body: JSON.stringify({ products: state.products, sales: localSales })
+        });
+        if (migration.ok) state.sales = localSales;
+      }
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      render();
+    } catch (error) {
+      console.error("Não foi possível carregar os dados compartilhados do painel.", error);
+      showToast(error.message || "Os dados ainda não foram sincronizados com o servidor.");
     }
   }
 
@@ -286,23 +331,24 @@ function initializeDashboard() {
   });
 
   $("#new-product-button").addEventListener("click", () => openProductDialog());
-  $("#clear-orders-button").addEventListener("click", () => {
+  $("#clear-orders-button").addEventListener("click", async () => {
     if (!state.sales.length) return;
     if (!window.confirm(`Apagar os ${state.sales.length} pedidos e zerar os valores deste painel? O catálogo e o estoque serão mantidos.`)) return;
-    const previousSales = state.sales;
-    state.sales = [];
-    if (persist()) {
+    try {
+      const response = await fetch("/api/store-data", { method: "DELETE", headers: { "X-CSRF-Token": csrfToken() } });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível limpar os pedidos compartilhados.");
+      state.sales = [];
+      localStorage.setItem(storageKey, JSON.stringify(state));
       render();
-      showToast("Pedidos e valores do painel foram limpos.");
-    } else {
-      state.sales = previousSales;
-      render();
+      showToast("Pedidos e valores do painel foram limpos em todos os navegadores.");
+    } catch (error) {
+      showToast(error.message || "Não foi possível limpar os pedidos.");
     }
-  });
-  $("#product-search").addEventListener("input", renderProducts);
+  });  $("#product-search").addEventListener("input", renderProducts);
   $("#notice-close").addEventListener("click", () => $(".notice").classList.add("hidden"));
 
-  $("#product-form").addEventListener("submit", (event) => {
+  $("#product-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const name = $("#product-name").value.trim();
     const price = Number($("#product-price").value);
@@ -333,10 +379,10 @@ function initializeDashboard() {
         bestSeller
       });
     }
-    if (persist()) {
+    if (await persist()) {
       render();
       $("#product-dialog").close();
-      showToast(editingProductId ? "Produto atualizado neste navegador." : "Produto adicionado neste navegador.");
+      showToast(editingProductId ? "Produto atualizado e compartilhado com todos os navegadores." : "Produto adicionado e compartilhado com todos os navegadores.");
       editingProductId = null;
     }
   });
@@ -346,32 +392,40 @@ function initializeDashboard() {
     if (button) openProductDialog(getProduct(button.dataset.editProduct));
   });
 
-  $("#sales-body").addEventListener("click", (event) => {
+  $("#sales-body").addEventListener("click", async (event) => {
     const confirmButton = event.target.closest("[data-confirm-payment]");
     const cancelButton = event.target.closest("[data-cancel-order]");
     const saleId = confirmButton?.dataset.confirmPayment || cancelButton?.dataset.cancelOrder;
     if (!saleId) return;
     const sale = state.sales.find((item) => item.id === saleId);
     if (!sale || sale.status !== "pending") return;
-    if (confirmButton) {
-      if (!window.confirm(`Confirme somente depois de conferir o PIX de ${money(sale.amount)} no aplicativo do banco. Marcar o pedido ${sale.id} como pago?`)) return;
-      sale.status = "paid";
-      sale.paidAt = new Date().toISOString();
-    } else {
-      if (!window.confirm(`Cancelar o pedido ${sale.id}? Confira primeiro que nenhum pagamento foi recebido.`)) return;
-      sale.status = "cancelled";
-      sale.cancelledAt = new Date().toISOString();
-      for (const item of sale.items || []) {
-        const product = getProduct(item.productId);
-        if (product && product.stockVerified === true && Number.isInteger(product.stock)) product.stock += item.quantity;
+    const action = confirmButton ? "paid" : "cancelled";
+    const prompt = confirmButton
+      ? `Confirme somente depois de conferir o PIX de ${money(sale.amount)} no aplicativo do banco. Marcar o pedido ${sale.id} como pago?`
+      : `Cancelar o pedido ${sale.id}? Confira primeiro que nenhum pagamento foi recebido.`;
+    if (!window.confirm(prompt)) return;
+    try {
+      const response = await fetch("/api/store-data", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken() },
+        body: JSON.stringify({ id: saleId, action })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível atualizar o pedido compartilhado.");
+      Object.assign(sale, result.order);
+      if (action === "cancelled") {
+        for (const item of sale.items || []) {
+          const product = getProduct(item.productId);
+          if (product?.stockVerified === true && Number.isInteger(product.stock)) product.stock += item.quantity;
+        }
       }
-    }
-    if (persist()) {
+      localStorage.setItem(storageKey, JSON.stringify(state));
       render();
-      showToast(confirmButton ? "Pedido marcado como pago após sua conferência." : "Pedido cancelado.");
+      showToast(action === "paid" ? "Pedido atualizado em todos os navegadores." : "Pedido cancelado em todos os navegadores.");
+    } catch (error) {
+      showToast(error.message || "Não foi possível atualizar o pedido.");
     }
   });
-
   $("#pix-settings-form").addEventListener("submit", (event) => {
     event.preventDefault();
     const key = $("#pix-key").value.trim();
@@ -452,6 +506,8 @@ function initializeDashboard() {
     showToast("O catálogo de referência não foi carregado. Confira se catalog.js está na mesma pasta.");
   }
   render();
+  loadSharedDashboardData();
+  window.setInterval(() => { if (document.visibilityState === 'visible') loadSharedDashboardData(); }, 15000);
   window.addEventListener("storage", (event) => {
     if (event.key === storageKey && event.newValue) {
       try {
