@@ -326,6 +326,10 @@ button { cursor: pointer; }
 .payment-delivery { margin: -5px 0 13px; padding: 10px; border-radius: 7px; color: #595568; background: #f7f5fa; font-size: 10px; line-height: 1.5; }
 .payment-qr-wrap { display: flex; align-items: center; justify-content: center; margin: 14px 0; }
 .payment-qr-wrap canvas { width: min(220px, 65vw) !important; height: min(220px, 65vw) !important; padding: 8px; border: 1px solid #eceaf2; border-radius: 10px; background: white; }
+.pix-copy-label { display: block; margin: 12px 0 6px; color: var(--ink); font-size: 12px; font-weight: 700; }
+.pix-copy-code { display: block; width: 100%; min-height: 72px; padding: 9px 10px; resize: vertical; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); background: var(--canvas); font: 11px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; }
+.pix-copy-button { margin-top: 8px; color: var(--violet); background: #f0eaff; }
+.pix-copy-button:hover { background: #e6dcff; }
 .payment-thanks { margin-top: 15px; padding: 15px; border: 1px solid #d9eee2; border-radius: 9px; color: #28754b; background: #f1fbf5; text-align: center; }
 .payment-thanks strong { font-size: 14px; }
 .payment-thanks p { margin: 6px 0 0; color: #527360; font-size: 10px; line-height: 1.55; }

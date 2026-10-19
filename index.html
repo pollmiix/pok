@@ -363,6 +363,9 @@
       <p class="payment-delivery" id="payment-delivery"></p>
       <p class="payment-delivery">O valor do QR PIX cobre os produtos; o frete ainda será combinado e não está incluído.</p>
       <div class="payment-qr-wrap" id="payment-qr-wrap"><canvas id="payment-pix-qr" aria-label="QR Code PIX para pagamento"></canvas></div>
+      <label class="pix-copy-label" for="payment-pix-code">PIX copia e cola</label>
+      <textarea class="pix-copy-code" id="payment-pix-code" readonly aria-label="Código PIX copia e cola"></textarea>
+      <button class="checkout-submit pix-copy-button" id="payment-pix-copy" type="button">Copiar código PIX</button>
       <button class="checkout-submit" id="payment-reported-button" type="button">Já fiz o pagamento</button>
       <div class="payment-thanks hidden" id="payment-thanks" role="status"><strong>Obrigado por avisar!</strong><p>A loja vai conferir o recebimento do PIX. Seu pedido continua aguardando confirmação.</p></div>
       <button class="checkout-submit" type="button" data-close-checkout>Voltar à loja</button>

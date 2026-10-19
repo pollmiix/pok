@@ -711,6 +711,7 @@
     try {
       const pixPayload = window.PixQr.buildPixPayload({ key: pixSettings.key, owner: pixSettings.owner, amount });
       await window.PixQr.render($("#payment-pix-qr"), pixPayload, 220);
+      $("#payment-pix-code").value = pixPayload;
     } catch (error) {
       console.error("Não foi possível gerar o QR Code PIX do pedido.", error);
       showToast(error.message || "O pedido foi registrado, mas não foi possível gerar o QR Code PIX.");
@@ -735,6 +736,26 @@
     $("#checkout-form").reset();
     renderCart();
   }
+
+  $("#payment-pix-copy").addEventListener("click", async () => {
+    const code = $("#payment-pix-code").value;
+    if (!code) {
+      showToast("Gere o QR Code antes de copiar o código PIX.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch {
+      const input = $("#payment-pix-code");
+      input.focus();
+      input.select();
+      if (!document.execCommand("copy")) {
+        showToast("Não foi possível copiar automaticamente. Selecione e copie o código PIX.");
+        return;
+      }
+    }
+    showToast("Código PIX copiado. Cole no aplicativo do seu banco.");
+  });
 
   readLocalData();
   syncShowcaseFromLocation();
