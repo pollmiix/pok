@@ -8,15 +8,14 @@ function initializeDashboard() {
   const catalog = Array.isArray(window.STORE_CATALOG) ? window.STORE_CATALOG : [];
   // Correspondências marcadas como mais vendidas na página de Pokémon da Ri Happy.
   const riHappyBestSellerIds = new Set(Array.from({ length: 19 }, (_, index) => `imported-${index + 1}`));
-  const availableProductIds = new Set(Array.from({ length: 23 }, (_, index) => `imported-${index + 1}`));
   const sourceProducts = catalog.map((product, index) => ({
     ...product,
     id: `imported-${index + 1}`,
     name: product.name,
     price: product.price,
     image: product.image,
-    stockVerified: availableProductIds.has(`imported-${index + 1}`),
-    ...(availableProductIds.has(`imported-${index + 1}`) ? { stock: 1 } : {}),
+    stockVerified: true,
+    stock: 23,
     bestSeller: riHappyBestSellerIds.has(`imported-${index + 1}`)
   }));
 
@@ -45,11 +44,6 @@ function initializeDashboard() {
           if (match) {
             mergedProduct.stockVerified = mergedProduct.stockVerified === true && Number.isInteger(mergedProduct.stock);
             if (!mergedProduct.stockVerified) delete mergedProduct.stock;
-          }
-          if (availableProductIds.has(product.id)
-            && !(mergedProduct.stockVerified === true && Number.isInteger(mergedProduct.stock))) {
-            mergedProduct.stock = 1;
-            mergedProduct.stockVerified = true;
           }
           return mergedProduct;
         });
@@ -146,10 +140,11 @@ function initializeDashboard() {
       const shared = await response.json();
       if (!response.ok) throw new Error(shared.error || "Não foi possível carregar os dados compartilhados.");
       if (!Array.isArray(shared.products)) {
+        state.products = state.products.map((product) => ({ ...product, stock: 23, stockVerified: true }));
         const initialize = await fetch("/api/store-data", {
           method: "PUT",
           headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken() },
-          body: JSON.stringify({ products: state.products, sales: state.sales })
+          body: JSON.stringify({ products: state.products, sales: state.sales, inventoryPreset: "23-units-each" })
         });
         const result = await initialize.json();
         if (!initialize.ok) throw new Error(result.error || "Não foi possível iniciar o catálogo compartilhado.");
@@ -160,29 +155,31 @@ function initializeDashboard() {
         const base = sourceProducts.find((entry) => entry.id === product.id);
         const refreshEtbPrice = base?.id === "imported-4" && Number(product.price) === 599.99;
         const merged = base ? { ...base, ...product, ...(refreshEtbPrice ? { price: base.price } : {}), name: base.name, image: base.image } : product;
-        if (availableProductIds.has(product.id)
-          && !(merged.stockVerified === true && Number.isInteger(merged.stock))) {
-          merged.stock = 1;
-          merged.stockVerified = true;
-        }
-        return merged;
+        return shared.inventoryPreset === "23-units-each"
+          ? merged
+          : { ...merged, stock: 23, stockVerified: true };
       });
       const sharedProductIds = new Set(sharedProducts.map((product) => product.id));
       const missingProducts = sourceProducts.filter((product) => !sharedProductIds.has(product.id));
       const catalogNeedsSync = shared.products.some((product) => {
         const base = sourceProducts.find((entry) => entry.id === product.id);
         return base && (product.name !== base.name || product.image !== base.image
-          || (base.id === "imported-4" && Number(product.price) === 599.99)
-          || (availableProductIds.has(product.id)
-            && !(product.stockVerified === true && Number.isInteger(product.stock))));
+          || (base.id === "imported-4" && Number(product.price) === 599.99));
       });
-      state.products = [...sharedProducts, ...missingProducts];
+      state.products = [...sharedProducts, ...missingProducts].map((product) => shared.inventoryPreset === "23-units-each"
+        ? product
+        : { ...product, stock: 23, stockVerified: true });
       state.sales = Array.isArray(shared.sales) ? shared.sales : [];
-      if (missingProducts.length || catalogNeedsSync || (!state.sales.length && localSales.length)) {
+      const inventoryNeedsSync = shared.inventoryPreset !== "23-units-each";
+      if (missingProducts.length || catalogNeedsSync || inventoryNeedsSync || (!state.sales.length && localSales.length)) {
         const migration = await fetch("/api/store-data", {
           method: "PUT",
           headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken() },
-          body: JSON.stringify({ products: state.products, sales: state.sales.length ? state.sales : localSales })
+          body: JSON.stringify({
+            products: state.products,
+            sales: state.sales.length ? state.sales : localSales,
+            ...(inventoryNeedsSync ? { inventoryPreset: "23-units-each" } : {})
+          })
         });
         if (migration.ok && !state.sales.length) state.sales = localSales;
       }

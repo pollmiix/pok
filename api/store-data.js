@@ -4,6 +4,7 @@ const AUTH_COOKIE = 'walkcards_admin';
 const CSRF_COOKIE = 'walkcards_csrf';
 const PRODUCTS_KEY = 'walkcards:products';
 const ORDERS_KEY = 'walkcards:orders';
+const INVENTORY_PRESET_KEY = 'walkcards:inventory-preset';
 
 function parseCookies(header = '') {
   return Object.fromEntries(header.split(';').map((part) => {
@@ -143,9 +144,10 @@ module.exports = async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       const products = await readArray(PRODUCTS_KEY);
-      if (!authenticated(req)) return sendJson(res, 200, { products });
+      const inventoryPreset = await redisCommand(['GET', INVENTORY_PRESET_KEY]);
+      if (!authenticated(req)) return sendJson(res, 200, { products, inventoryPreset });
       const sales = await readArray(ORDERS_KEY);
-      return sendJson(res, 200, { products, sales: sales || [] });
+      return sendJson(res, 200, { products, sales: sales || [], inventoryPreset });
     }
 
     if (req.method === 'POST') return await createOrder(req, res);
@@ -156,6 +158,7 @@ module.exports = async function handler(req, res) {
       const body = req.body && typeof req.body === 'object' ? req.body : {};
       if (!Array.isArray(body.products) || body.products.length > 2000) return sendJson(res, 400, { error: 'O catálogo enviado é inválido.' });
       await redisCommand(['SET', PRODUCTS_KEY, JSON.stringify(body.products)]);
+      if (body.inventoryPreset === '23-units-each') await redisCommand(['SET', INVENTORY_PRESET_KEY, '23-units-each']);
       if (Array.isArray(body.sales)) {
         const currentSales = await readArray(ORDERS_KEY);
         if (!currentSales?.length && body.sales.length) await redisCommand(['SET', ORDERS_KEY, JSON.stringify(body.sales.slice(-5000))]);

@@ -3,7 +3,7 @@ const path = require('node:path');
 
 const PRODUCTS_KEY = 'walkcards:products';
 const SITE_URL = 'https://walkcards.online/';
-const AVAILABLE_PRODUCT_IDS = new Set(Array.from({ length: 23 }, (_, index) => `imported-${index + 1}`));
+const INVENTORY_PRESET = 23;
 
 function xml(value) {
   return String(value ?? '').replace(/[<>&"']/g, (character) => ({
@@ -39,10 +39,18 @@ async function sharedProducts() {
   if (!response.ok) throw new Error('Não foi possível carregar o catálogo compartilhado.');
   const result = await response.json();
   if (result.error) throw new Error('Não foi possível carregar o catálogo compartilhado.');
-  if (!result.result) return [];
-  const parsed = JSON.parse(result.result);
+  const parsed = result.result ? JSON.parse(result.result) : [];
   if (!Array.isArray(parsed)) throw new Error('O catálogo compartilhado está inválido.');
-  return parsed;
+  const presetResponse = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(['GET', 'walkcards:inventory-preset']),
+    cache: 'no-store'
+  });
+  if (!presetResponse.ok) throw new Error('Não foi possível ler a configuração do estoque.');
+  const presetResult = await presetResponse.json();
+  if (presetResult.error) throw new Error('Não foi possível ler a configuração do estoque.');
+  return { products: parsed, inventoryPreset: presetResult.result };
 }
 
 function productXml(product) {
@@ -81,24 +89,23 @@ module.exports = async function handler(_req, res) {
   try {
     const catalog = localCatalog();
     const byId = new Map(catalog.map((product) => [product.id, product]));
-    for (const product of await sharedProducts()) {
+    const shared = await sharedProducts();
+    for (const product of shared.products) {
       const local = byId.get(product.id) || {};
       const merged = {
         ...local,
         ...product,
         images: Array.isArray(product.images) && product.images.length ? product.images : local.images
       };
-      if (AVAILABLE_PRODUCT_IDS.has(product.id)
-        && !(merged.stockVerified === true && Number.isInteger(merged.stock))) {
-        merged.stock = 1;
+      if (shared.inventoryPreset !== '23-units-each') {
+        merged.stock = INVENTORY_PRESET;
         merged.stockVerified = true;
       }
       byId.set(product.id, merged);
     }
-    for (const id of AVAILABLE_PRODUCT_IDS) {
-      const product = byId.get(id);
-      if (product && !(product.stockVerified === true && Number.isInteger(product.stock))) {
-        product.stock = 1;
+    if (shared.inventoryPreset !== '23-units-each') {
+      for (const product of byId.values()) {
+        product.stock = INVENTORY_PRESET;
         product.stockVerified = true;
       }
     }

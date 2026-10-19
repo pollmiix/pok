@@ -85,7 +85,6 @@
 
   // Produtos do catálogo local que correspondem aos itens destacados na página Pokémon da Ri Happy.
   const riHappyBestSellerIds = new Set(Array.from({ length: 19 }, (_, index) => `imported-${index + 1}`));
-  const availableProductIds = new Set(Array.from({ length: 23 }, (_, index) => `imported-${index + 1}`));
   const importedProducts = (Array.isArray(window.STORE_CATALOG) ? window.STORE_CATALOG : []).map((product, index) => {
     const id = `imported-${index + 1}`;
     const gallery = window.STORE_PRODUCT_GALLERIES?.[id];
@@ -96,8 +95,8 @@
       price: Number(product.price),
       image: product.image || "",
       images: Array.isArray(gallery) ? gallery.filter((image) => typeof image === "string" && image) : [],
-      stockVerified: availableProductIds.has(id),
-      ...(availableProductIds.has(id) ? { stock: 1 } : {}),
+      stockVerified: true,
+      stock: 23,
       bestSeller: riHappyBestSellerIds.has(id)
     };
   });
@@ -206,11 +205,16 @@
       if (!Array.isArray(shared.products)) return;
       const sharedProducts = shared.products.map((product) => {
         const source = importedProducts.find((entry) => entry.id === product.id);
-        return source ? { ...source, ...product, name: source.name, image: source.image, images: source.images } : product;
+        const merged = source ? { ...source, ...product, name: source.name, image: source.image, images: source.images } : product;
+        return shared.inventoryPreset === "23-units-each"
+          ? merged
+          : { ...merged, stock: 23, stockVerified: true };
       });
       const sharedProductIds = new Set(sharedProducts.map((product) => product.id));
       const newCatalogProducts = importedProducts.filter((product) => !sharedProductIds.has(product.id));
-      products = [...sharedProducts, ...newCatalogProducts];
+      products = [...sharedProducts, ...newCatalogProducts].map((product) => shared.inventoryPreset === "23-units-each"
+        ? product
+        : { ...product, stock: 23, stockVerified: true });
       dashboardState.products = products;
       cart = cart.filter((item) => products.some((product) => product.id === item.productId));
       localStorage.setItem(cartStorageKey, JSON.stringify(cart));
