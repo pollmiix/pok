@@ -179,8 +179,9 @@ tbody tr:hover td { background: #fdfcff; }
 .modal-description { margin: 0 0 17px; color: #85899b; font-size: 10px; line-height: 1.5; }
 .field-label { display: block; margin: 13px 0 6px; color: #55596c; font-size: 10px; font-weight: 700; }
 .field-label span { color: #a1a3b0; font-weight: 400; }
-.modal input, .modal select { width: 100%; min-height: 38px; padding: 0 10px; border: 1px solid #e7e6ee; border-radius: 7px; outline: none; color: #3e4257; background: #fff; font-size: 11px; }
-.modal input:focus, .modal select:focus { border-color: #a997e7; box-shadow: 0 0 0 3px #7356d812; }
+.modal input:not([type="checkbox"]), .modal select { width: 100%; min-height: 38px; padding: 0 10px; border: 1px solid #e7e6ee; border-radius: 7px; outline: none; color: #3e4257; background: #fff; font-size: 11px; }
+.modal input:not([type="checkbox"]):focus, .modal select:focus { border-color: #a997e7; box-shadow: 0 0 0 3px #7356d812; }
+.modal input[type="checkbox"] { appearance: auto; width: 16px; height: 16px; min-height: 16px; flex: 0 0 16px; margin: 1px 0 0; padding: 0; accent-color: var(--violet); }
 .field-row { display: grid; grid-template-columns: 1fr 1.5fr; gap: 12px; }
 .field-row > div { min-width: 0; }
 .sale-total { display: flex; justify-content: space-between; margin-top: 17px; padding: 12px 0; border-top: 1px solid #efedf4; color: #7b7f91; font-size: 10px; }
