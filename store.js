@@ -214,6 +214,7 @@
       localStorage.setItem(cartStorageKey, JSON.stringify(cart));
       renderProducts();
       renderCart();
+      openProductFromUrl();
     } catch (error) {
       console.error("Não foi possível carregar o catálogo compartilhado.", error);
     }
@@ -506,6 +507,11 @@
     detailDialog.scrollTop = 0;
   }
 
+  function openProductFromUrl() {
+    const productId = new URLSearchParams(window.location.search).get("produto");
+    if (productId && getProduct(productId) && !$("#product-detail-dialog").open) openProductDetails(productId);
+  }
+
   function renderCart() {
     $("#cart-count").textContent = String(cartQuantity());
     $("#detail-cart-count").textContent = String(cartQuantity());
@@ -766,6 +772,7 @@
   syncShowcaseFromLocation();
   renderProducts();
   renderCart();
+  openProductFromUrl();
   loadSharedProducts();
   window.setInterval(() => {
     if (document.visibilityState === "visible") loadSharedProducts();

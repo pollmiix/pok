@@ -4,6 +4,10 @@
     {
       "source": "/admin.php",
       "destination": "/api/admin"
+    },
+    {
+      "source": "/merchant-feed.xml",
+      "destination": "/api/merchant-feed"
     }
   ]
 }
