@@ -9,6 +9,7 @@ function initializeDashboard() {
   // Correspondências marcadas como mais vendidas na página de Pokémon da Ri Happy.
   const riHappyBestSellerIds = new Set(Array.from({ length: 19 }, (_, index) => `imported-${index + 1}`));
   const sourceProducts = catalog.map((product, index) => ({
+    ...product,
     id: `imported-${index + 1}`,
     name: product.name,
     price: product.price,
@@ -150,13 +151,19 @@ function initializeDashboard() {
       const localSales = state.sales;
       const sharedProducts = shared.products.map((product) => {
         const base = sourceProducts.find((entry) => entry.id === product.id);
-        return base ? { ...base, ...product, image: base.image } : product;
+        const refreshEtbPrice = base?.id === "imported-4" && Number(product.price) === 599.99;
+        return base ? { ...base, ...product, ...(refreshEtbPrice ? { price: base.price } : {}), name: base.name, image: base.image } : product;
       });
       const sharedProductIds = new Set(sharedProducts.map((product) => product.id));
       const missingProducts = sourceProducts.filter((product) => !sharedProductIds.has(product.id));
+      const catalogNeedsSync = shared.products.some((product) => {
+        const base = sourceProducts.find((entry) => entry.id === product.id);
+        return base && (product.name !== base.name || product.image !== base.image
+          || (base.id === "imported-4" && Number(product.price) === 599.99));
+      });
       state.products = [...sharedProducts, ...missingProducts];
       state.sales = Array.isArray(shared.sales) ? shared.sales : [];
-      if (missingProducts.length || (!state.sales.length && localSales.length)) {
+      if (missingProducts.length || catalogNeedsSync || (!state.sales.length && localSales.length)) {
         const migration = await fetch("/api/store-data", {
           method: "PUT",
           headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken() },

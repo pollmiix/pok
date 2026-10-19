@@ -89,6 +89,7 @@
     const id = `imported-${index + 1}`;
     const gallery = window.STORE_PRODUCT_GALLERIES?.[id];
     return {
+      ...product,
       id,
       name: product.name,
       price: Number(product.price),
@@ -138,6 +139,7 @@
             const catalogProduct = match ? importedProducts[Number(match[1]) - 1] : null;
             const normalizedProduct = {
               ...product,
+              name: catalogProduct?.name || product.name,
               image: catalogProduct?.image || product.image,
               bestSeller: typeof product.bestSeller === "boolean" ? product.bestSeller : catalogProduct?.bestSeller === true,
               ...(match ? { stockVerified: product.stockVerified === true && Number.isInteger(product.stock) } : {}),
@@ -202,7 +204,7 @@
       if (!Array.isArray(shared.products)) return;
       const sharedProducts = shared.products.map((product) => {
         const source = importedProducts.find((entry) => entry.id === product.id);
-        return source ? { ...source, ...product, image: source.image, images: source.images } : product;
+        return source ? { ...source, ...product, name: source.name, image: source.image, images: source.images } : product;
       });
       const sharedProductIds = new Set(sharedProducts.map((product) => product.id));
       const newCatalogProducts = importedProducts.filter((product) => !sharedProductIds.has(product.id));
