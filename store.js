@@ -596,8 +596,20 @@
       showToast("Adicione um produto ao carrinho antes de continuar.");
       return;
     }
+    try {
+      const response = await fetch("/api/pix-settings", { cache: "no-store" });
+      const settings = await response.json();
+      if (!response.ok) throw new Error(settings.error || "Não foi possível carregar as configurações de pagamento.");
+      if (settings.key) pixSettings = settings;
+    } catch (error) {
+      console.error("Não foi possível carregar a chave Pix compartilhada.", error);
+      if (!pixSettings.key.trim()) {
+        showToast(error.message || "Não foi possível carregar a chave Pix. Tente novamente mais tarde.");
+        return;
+      }
+    }
     if (!pixSettings.key.trim()) {
-      showToast("A loja ainda não cadastrou a chave PIX. Entre em contato com a loja.");
+      showToast("A loja ainda não cadastrou a chave Pix. Entre em contato com a loja.");
       return;
     }
 

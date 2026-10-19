@@ -77,20 +77,42 @@ function initializeDashboard() {
   let editingProductId = null;
   let toastTimer;
   let pixSettings = { key: "", owner: "" };
-
   try {
-    const savedPix = localStorage.getItem(pixStorageKey);
-    if (savedPix) {
-      const parsedPix = JSON.parse(savedPix);
-      if (parsedPix && typeof parsedPix.key === "string" && typeof parsedPix.owner === "string") {
-        pixSettings = parsedPix;
-      }
-    }
+    const savedPix = JSON.parse(localStorage.getItem(pixStorageKey) || "null");
+    if (savedPix && typeof savedPix.key === "string" && typeof savedPix.owner === "string") pixSettings = savedPix;
   } catch (error) {
-    console.error("Não foi possível carregar as configurações PIX.", error);
-    showToast("Não foi possível ler a chave PIX salva.");
+    console.error("Não foi possível carregar a chave Pix antiga deste navegador.", error);
   }
 
+  const csrfToken = () => document.querySelector('input[name="csrf_token"]')?.value || "";
+  async function loadSharedPixSettings() {
+    try {
+      const response = await fetch("/api/pix-settings", { cache: "no-store" });
+      const settings = await response.json();
+      if (!response.ok) throw new Error(settings.error || "Não foi possível carregar a chave Pix.");
+      if (!settings.key && pixSettings.key) {
+        const migration = await fetch("/api/pix-settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken() },
+          body: JSON.stringify(pixSettings)
+        });
+        const migrated = await migration.json();
+        if (migration.ok) Object.assign(settings, migrated);
+      }
+      pixSettings = settings;
+      localStorage.setItem(pixStorageKey, JSON.stringify(settings));
+      $("#pix-owner").value = settings.owner;
+      $("#pix-key").value = settings.key;
+      $("#remove-pix-button").classList.toggle("hidden", !settings.key);
+    } catch (error) {
+      console.error("Não foi possível carregar as configurações PIX compartilhadas.", error);
+      $("#pix-owner").value = pixSettings.owner;
+      $("#pix-key").value = pixSettings.key;
+      $("#remove-pix-button").classList.toggle("hidden", !pixSettings.key);
+      showToast(error.message || "Não foi possível carregar a chave Pix compartilhada.");
+    }
+  }
+  loadSharedPixSettings();
   function persist() {
     try {
       localStorage.setItem(storageKey, JSON.stringify(state));
@@ -358,17 +380,28 @@ function initializeDashboard() {
       showToast("Informe a chave PIX da loja.");
       return;
     }
-    pixSettings = { key, owner };
-    try {
-      localStorage.setItem(pixStorageKey, JSON.stringify(pixSettings));
+    fetch("/api/pix-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken() },
+      body: JSON.stringify({ key, owner })
+    }).then(async (response) => {
+      const settings = await response.json();
+      if (!response.ok) throw new Error(settings.error || "Não foi possível salvar a chave Pix compartilhada.");
+      pixSettings = settings;
+      localStorage.setItem(pixStorageKey, JSON.stringify(settings));
       $("#remove-pix-button").classList.remove("hidden");
-      showToast("Chave PIX salva neste navegador.");
-    } catch (error) {
-      console.error("Não foi possível salvar a configuração PIX.", error);
-      showToast("Não foi possível salvar a chave PIX neste navegador.");
-    }
+      showToast("Chave Pix salva para todos os navegadores.");
+    }).catch((error) => {
+      console.error("Não foi possível salvar a configuração PIX compartilhada.", error);
+      pixSettings = { key, owner };
+      try {
+        localStorage.setItem(pixStorageKey, JSON.stringify(pixSettings));
+        showToast("Chave salva apenas neste navegador. Configure o Redis da Vercel para compartilhar.");
+      } catch (storageError) {
+        showToast(error.message || "Não foi possível salvar a chave Pix.");
+      }
+    });
   });
-
   $("#test-pix-button").addEventListener("click", async () => {
     const key = $("#pix-key").value.trim();
     if (!key) {
@@ -389,20 +422,24 @@ function initializeDashboard() {
   });
 
   $("#remove-pix-button").addEventListener("click", () => {
-    try {
-      localStorage.removeItem(pixStorageKey);
+    fetch("/api/pix-settings", {
+      method: "DELETE",
+      headers: { "X-CSRF-Token": csrfToken() }
+    }).then(async (response) => {
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Não foi possível remover a chave Pix.");
       pixSettings = { key: "", owner: "" };
+      localStorage.removeItem(pixStorageKey);
       $("#pix-key").value = "";
       $("#pix-owner").value = "";
       $("#pix-test-preview").classList.add("hidden");
       $("#remove-pix-button").classList.add("hidden");
-      showToast("Chave PIX removida.");
-    } catch (error) {
-      console.error("Não foi possível remover a configuração PIX.", error);
-      showToast("Não foi possível remover a chave PIX.");
-    }
+      showToast("Chave Pix removida do site.");
+    }).catch((error) => {
+      console.error("Não foi possível remover a configuração PIX compartilhada.", error);
+      showToast(error.message || "Não foi possível remover a chave Pix.");
+    });
   });
-
   $("#today-label").textContent = "";
   $("#product-search").value = "";
   document.querySelectorAll(".modal").forEach((dialog) => {
