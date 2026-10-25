@@ -1,0 +1,36 @@
+:root {
+  color: #253b59;
+  background: #f3f3f5;
+  font-family: Poppins, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+* { box-sizing: border-box; }
+body { min-width: 320px; min-height: 100vh; margin: 0; background: #f3f3f5; }
+.lotomania-page { display: flex; min-height: 100vh; align-items: center; flex-direction: column; justify-content: center; padding: 28px 16px; }
+.lotomania-card { width: min(100%, 398px); min-height: 505px; overflow: hidden; border-radius: 15px; background: white; box-shadow: 0 3px 12px #0003; }
+.lotomania-card-header { display: flex; height: 57px; align-items: center; gap: 18px; padding: 0 12px; color: white; background: #ed7900; }
+.lotomania-mark { width: 38px; height: 38px; flex: 0 0 auto; fill: white; }
+.lotomania-card-header strong { font-size: 21px; font-weight: 800; letter-spacing: -.5px; }
+.lotomania-card-body { position: relative; display: flex; min-height: 448px; align-items: center; flex-direction: column; padding: 13px 18px 26px; overflow: hidden; }
+.lotomania-prize { z-index: 1; color: #ee7900; font-size: 35px; font-weight: 800; letter-spacing: -.8px; line-height: 1.15; text-align: center; white-space: nowrap; }
+.lotomania-prize span { display: block; font-size: 23px; letter-spacing: -.3px; }
+.lotomania-contest { z-index: 1; margin: 5px 0 0; font-size: 14px; text-align: center; }
+.lotomania-draw { z-index: 1; display: grid; gap: 2px; margin-top: auto; margin-bottom: 72px; color: #344b6c; font-size: 14px; text-align: center; }
+.lotomania-draw strong { font-size: 16px; font-weight: 700; }
+.lotomania-watermark { position: absolute; color: #f2f2f2; font-size: 100px; line-height: 1; }
+.watermark-one { right: -4px; bottom: 23px; transform: rotate(-12deg); }
+.watermark-two { right: 78px; bottom: 95px; font-size: 68px; transform: rotate(16deg); }
+.watermark-three { left: 10px; bottom: 63px; font-size: 55px; transform: rotate(-18deg); }
+.lotomania-bet { position: absolute; z-index: 2; right: 16%; bottom: 26px; left: 16%; display: grid; min-height: 69px; align-content: center; border: 2px solid #ed7900; border-radius: 11px; color: #ed7900; background: #fff; text-align: center; text-decoration: none; transition: color .15s, background .15s; }
+.lotomania-bet strong { font-size: 20px; line-height: 1.35; }
+.lotomania-bet span { font-size: 18px; }
+.lotomania-bet:hover { color: white; background: #ed7900; }
+.back-link { margin-top: 16px; color: #344b6c; font-size: 12px; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+@media (max-width: 420px) {
+  .lotomania-card { min-height: 470px; }
+  .lotomania-card-body { min-height: 413px; }
+  .lotomania-prize { font-size: clamp(28px, 8vw, 35px); }
+  .lotomania-bet { right: 12%; left: 12%; }
+}
