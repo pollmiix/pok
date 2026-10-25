@@ -3,12 +3,18 @@
   const cloverGrid = document.querySelector('#clover-grid');
   const numbers = new Set();
   const clovers = new Set();
+  let numberRow;
 
   function updateSummary(selection, output, noun) {
     output.value = selection.size ? [...selection].sort((a, b) => a - b).map(n => String(n).padStart(2, '0')).join(' ') : '';
   }
 
   for (let value = 1; value <= 50; value += 1) {
+    if ((value - 1) % 21 === 0) {
+      numberRow = document.createElement('div');
+      numberRow.className = 'number-row';
+      numberGrid.append(numberRow);
+    }
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'number-button';
@@ -21,7 +27,7 @@
       button.setAttribute('aria-pressed', String(numbers.has(value)));
       updateSummary(numbers, document.querySelector('#number-summary'), 'números');
     });
-    numberGrid.append(button);
+    numberRow.append(button);
   }
 
   for (let value = 1; value <= 6; value += 1) {
@@ -49,7 +55,7 @@
     buttons.forEach((button, i) => button.setAttribute('aria-pressed', String(selection.has(i + 1))));
   }
 
-  const numberButtons = [...numberGrid.children];
+  const numberButtons = [...numberGrid.querySelectorAll('.number-button')];
   const cloverButtons = [...cloverGrid.children];
   document.querySelector('#complete-game').addEventListener('click', () => {
     fill(numbers, numberButtons, 6);

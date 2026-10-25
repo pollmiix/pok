@@ -11,7 +11,8 @@ button { font: inherit; }
 .ticket { width: min(100%, 1230px); margin: 0 auto; padding: 14px max(24px, calc((min(100vw, 1230px) - 994px) / 2)) 28px; }
 h1 { margin: 0 0 12px; color: #0864b5; font-size: clamp(34px, 4.2vw, 48px); font-weight: 800; letter-spacing: -2px; line-height: 1.2; }
 .instructions { margin: 0 0 10px; color: #263f5e; font-size: 11px; font-weight: 400; line-height: 1.8; }
-.number-grid { display: grid; grid-template-columns: repeat(21, 48px); gap: 28px 4px; }
+.number-grid { display: flex; flex-direction: column; gap: 28px; }
+.number-row { display: flex; flex-wrap: nowrap; gap: 4px; }
 .number-button { display: grid; width: 48px; aspect-ratio: 1; place-items: center; padding: 0; border: 1px solid #aaa; border-radius: 50%; color: #929292; background: #fff; font-size: 19px; font-weight: 700; cursor: pointer; transition: color .12s, border-color .12s, background .12s; }
 .number-button:hover { border-color: #08bea9; color: #08a993; }
 .number-button[aria-pressed="true"] { border-color: #08bea9; color: #fff; background: #08bea9; }
@@ -36,14 +37,12 @@ h1 { margin: 0 0 12px; color: #0864b5; font-size: clamp(34px, 4.2vw, 48px); font
   .ticket { padding: 25px 18px; }
   h1 { margin-bottom: 9px; font-size: clamp(30px, 8vw, 42px); letter-spacing: -1.3px; }
   .instructions { font-size: 11px; }
-  .number-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 12px 4px; }
+  .number-grid { gap: 12px; }
+  .number-row { flex-wrap: wrap; gap: 12px 4px; }
   .number-button { width: min(100%, 43px); font-size: 16px; }
   .action-row { grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 21px; }
   .selection-summary { grid-column: 1 / -1; grid-row: 1; min-height: 28px; padding-left: 8px; font-size: 16px; }
   .outline-button { min-width: 0; padding: 0 5px; font-size: 11px; }
   .clover-section { margin-top: 25px; padding-top: 18px; }
   .clover-actions { margin-top: 21px; }
-}
-@media (min-width: 761px) and (max-width: 1100px) {
-  .number-grid { grid-template-columns: repeat(16, 48px); }
 }
