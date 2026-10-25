@@ -8,9 +8,9 @@
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; border-top: 12px solid #f3f3f5; background: #fff; }
 button { font: inherit; }
-.ticket { width: min(100%, 1198px); margin: 0 auto; padding: 14px max(24px, calc((100% - 1022px) / 2)) 28px; }
+.ticket { width: min(100%, 1230px); margin: 0 auto; padding: 14px max(24px, calc((min(100vw, 1230px) - 994px) / 2)) 28px; }
 h1 { margin: 0 0 12px; color: #0864b5; font-size: clamp(34px, 4.2vw, 48px); font-weight: 800; letter-spacing: -2px; line-height: 1.2; }
-.instructions { margin: 0 0 17px; color: #263f5e; font-size: 11px; font-weight: 400; line-height: 1.8; }
+.instructions { margin: 0 0 10px; color: #263f5e; font-size: 11px; font-weight: 400; line-height: 1.8; }
 .number-grid { display: grid; grid-template-columns: repeat(21, 48px); gap: 28px 4px; }
 .number-button { display: grid; width: 48px; aspect-ratio: 1; place-items: center; padding: 0; border: 1px solid #aaa; border-radius: 50%; color: #929292; background: #fff; font-size: 19px; font-weight: 700; cursor: pointer; transition: color .12s, border-color .12s, background .12s; }
 .number-button:hover { border-color: #08bea9; color: #08a993; }
