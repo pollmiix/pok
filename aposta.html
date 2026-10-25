@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>Preencha sua aposta | +Milionária</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./aposta.css">
+  <script src="./aposta.js" defer></script>
+</head>
+<body>
+  <main class="ticket">
+    <h1>Preencha sua aposta</h1>
+    <p class="instructions">Para jogar, você escolhe 6 números dos 50 disponíveis + 2 trevos e pode ganhar ao acertar 6, 5, 4, 3 ou 2 números + 1 ou 2 trevos. São realizados dois sorteios semanais.</p>
+
+    <section aria-label="Escolha seis números">
+      <div class="number-grid" id="number-grid" role="group" aria-label="Números de 01 a 50"></div>
+      <div class="action-row">
+        <output class="selection-summary" id="number-summary" aria-live="polite"></output>
+        <button type="button" class="outline-button" id="complete-game">Complete o Jogo</button>
+        <button type="button" class="outline-button" id="clear-game">Limpar Volante</button>
+      </div>
+    </section>
+
+    <section class="clover-section" aria-label="Escolha de dois a seis trevos">
+      <p class="instructions">Para concorrer, você pode marcar de 2 a 6 trevos.</p>
+      <div class="clover-grid" id="clover-grid" role="group" aria-label="Trevos de 1 a 6"></div>
+      <div class="action-row clover-actions">
+        <output class="selection-summary" id="clover-summary" aria-live="polite"></output>
+        <button type="button" class="outline-button" id="complete-clovers">Complete os Trevos</button>
+        <button type="button" class="outline-button" id="clear-clovers">Limpar os Trevos</button>
+      </div>
+    </section>
+
+    <a class="back-link" href="./index.html">Voltar à loja</a>
+  </main>
+</body>
+</html>
