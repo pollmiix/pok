@@ -30,8 +30,7 @@
     button.className = 'clover-button';
     button.setAttribute('aria-label', `Trevo ${value}`);
     button.setAttribute('aria-pressed', 'false');
-    button.innerHTML = '<svg class="clover-shape" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 2.5c4.5 0 7 3.3 6.7 7.1 4.1-3.1 9.7-1.1 10.2 3.7 4.6.4 7 5.8 3.4 9.5 4.1 3.6 2.4 9.7-2.4 10.7.8 5.3-4.8 8.9-9.3 6.2-2 5.3-8.2 7.1-11.6 2.6-4 3.9-10.1 1.7-10.1-3.6-5.4.5-9-5-5.5-9.3-4.3-3.6-2.6-10 2.7-11-1-5.4 3.7-9.9 8.7-7.8 1-5.5 5.3-8.1 7.2-8.1Z"/></svg><span class="clover-number"></span>';
-    button.querySelector('.clover-number').textContent = value;
+    button.innerHTML = '<svg class="clover-shape" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="12" r="9.5"/><circle cx="36" cy="24" r="9.5"/><circle cx="24" cy="36" r="9.5"/><circle cx="12" cy="24" r="9.5"/><circle cx="24" cy="24" r="9.5"/><path d="M25 25c-1 6-3 11-8 17" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/></svg>';
     button.addEventListener('click', () => {
       if (clovers.has(value)) clovers.delete(value);
       else if (clovers.size < 6) clovers.add(value);
@@ -51,8 +50,10 @@
 
   const numberButtons = [...numberGrid.children];
   const cloverButtons = [...cloverGrid.children];
-  clovers.add(1);
-  cloverButtons[0].setAttribute('aria-pressed', 'true');
+  clovers.add(2);
+  clovers.add(5);
+  cloverButtons[1].setAttribute('aria-pressed', 'true');
+  cloverButtons[4].setAttribute('aria-pressed', 'true');
   updateSummary(clovers, document.querySelector('#clover-summary'), 'trevos');
   document.querySelector('#complete-game').addEventListener('click', () => {
     fill(numbers, numberButtons, 6);

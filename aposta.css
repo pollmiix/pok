@@ -20,15 +20,14 @@ h1 { margin: 0 0 12px; color: #0864b5; font-size: clamp(34px, 4.2vw, 48px); font
 .outline-button { min-width: 167px; min-height: 35px; padding: 0 13px; border: 1px solid #1acbb6; border-radius: 2px; color: #304969; background: #fff; font-size: 12px; font-weight: 700; cursor: pointer; }
 .outline-button:hover { color: #fff; background: #08bda8; }
 .clover-section { margin-top: 32px; padding-top: 25px; border-top: 1px solid #d5e2e2; }
+.clover-section h2 { margin: 0 0 5px; color: #2d367c; font-size: 21px; font-weight: 700; }
 .clover-section .instructions { margin-bottom: 13px; }
 .clover-grid { display: flex; flex-wrap: wrap; gap: 2px; }
 .clover-button { position: relative; display: grid; width: 48px; height: 48px; place-items: center; padding: 0; border: 0; border-radius: 8px; color: #fff; background: transparent; cursor: pointer; }
-.clover-shape { position: absolute; width: 48px; height: 48px; fill: #b5c7ca; stroke: #9aafb3; stroke-width: 1.8; transition: fill .12s, stroke .12s; }
-.clover-button:hover .clover-shape { fill: #7faeb0; stroke: #619395; }
+.clover-shape { position: absolute; width: 42px; height: 42px; fill: #a9adbf; color: #a9adbf; transition: fill .12s, color .12s; }
+.clover-button:hover .clover-shape { fill: #777faf; color: #777faf; }
 .clover-button[aria-pressed="true"] .clover-shape,
-.clover-button[aria-pressed="true"]:hover .clover-shape { fill: #ffc52b; stroke: #e2a915; }
-.clover-number { position: relative; z-index: 1; color: #fff; font-size: 25px; font-weight: 700; text-shadow: 0 1px 1px #71878b; }
-.clover-button[aria-pressed="true"] .clover-number { color: #0864b5; text-shadow: none; }
+.clover-button[aria-pressed="true"]:hover .clover-shape { fill: #555eae; color: #555eae; }
 .clover-actions { margin-top: 29px; }
 .back-link { display: inline-block; margin-top: 23px; color: #0864b5; font-size: 12px; text-decoration: none; }
 .back-link:hover { text-decoration: underline; }
