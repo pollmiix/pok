@@ -706,6 +706,8 @@ button { cursor: pointer; }
 
 .product-detail-price .product-original-price { display: block; color: #7d8196; font-size: 15px; font-weight: 400; margin-bottom: 6px; }
 .product-detail-price > small:not(.product-original-price) { font-size: 15px; }
+.store-topbar { position: sticky; top: 0; z-index: 3; }
+.store-topbar > .store-header { position: relative; top: auto; }
 .pix-announcement { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 6px 16px; color: #fff; background: #c71926; text-align: left; }
 .pix-announcement-badge { flex-shrink: 0; padding: 3px 7px; border-radius: 5px; color: #a0101b; background: #ffcf32; font-size: 13px; font-weight: 800; line-height: 1.2; }
 .pix-announcement p { margin: 0; font-size: 12px; line-height: 1.4; }

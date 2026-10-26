@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./store.css?v=pix-banner-red">
+  <link rel="stylesheet" href="./store.css?v=pix-banner-sticky">
   <script src="./catalog.js" defer></script>
   <script src="./catalog-galleries.js" defer></script>
   <script src="./google-auth-config.js" defer></script>
@@ -34,6 +34,7 @@
       <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  1.15 1.15 1.15 0 -.1"></feColorMatrix>
     </filter>
   </svg>
+  <div class="store-topbar">
   <aside class="pix-announcement" aria-label="Promoção no Pix">
     <span class="pix-announcement-badge">10% OFF</span>
     <div><p>Todos os produtos com <strong>10% de desconto no Pix!</strong></p><small>Os preços no Pix já incluem o desconto.</small></div>
@@ -54,6 +55,7 @@
     </button>
     <button class="cart-button" id="open-cart" type="button" aria-label="Carrinho"><svg aria-hidden="true" viewBox="0 0 32 32"><path d="M2 4h4l4 18h17l4-13H8M12 26a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm13 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"/></svg><span>Carrinho</span><b id="cart-count">0</b></button>
   </header>
+  </div>
 
   <main>
     <nav class="mobile-breadcrumb" aria-label="Trilha de navegação">
