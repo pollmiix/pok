@@ -1,4 +1,5 @@
 const crypto = require('node:crypto');
+const payments = require('./_lib/payments');
 
 const AUTH_COOKIE = 'walkcards_admin';
 const CSRF_COOKIE = 'walkcards_csrf';
@@ -62,7 +63,7 @@ module.exports = async function handler(req, res) {
     try {
       const stored = await redisCommand(['GET', PIX_SETTINGS_KEY]);
       const settings = stored ? JSON.parse(stored) : { key: '', owner: '' };
-      return sendJson(res, 200, settings);
+      return sendJson(res, 200, { key: settings.key || '', owner: settings.owner || '', gateway: (await payments.settings()).enabled ? 'blackcat' : 'manual' });
     } catch (error) {
       console.error('Não foi possível ler as configurações PIX compartilhadas.', error.message);
       return sendJson(res, 503, { error: 'O armazenamento compartilhado da chave Pix ainda não foi configurado.' });

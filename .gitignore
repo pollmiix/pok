@@ -1,4 +1,7 @@
 # Local audit and previews are not part of the storefront source.
+.env
+.env.*
+!.env.example
 /AUDITORIA-LOJA.md
 /checkout-logo-white-preview.png
 /mobile-preview.png

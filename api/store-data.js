@@ -1,4 +1,5 @@
 const crypto = require('node:crypto');
+const payments = require('./_lib/payments');
 
 const AUTH_COOKIE = 'walkcards_admin';
 const CSRF_COOKIE = 'walkcards_csrf';
@@ -49,7 +50,7 @@ async function redisCommand(command) {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(command),
-    cache: 'no-store'
+    cache: 'no-store', signal: AbortSignal.timeout(8000)
   });
   if (!response.ok) throw new Error(`Falha no armazenamento compartilhado (${response.status}).`);
   const result = await response.json();
@@ -108,6 +109,26 @@ async function createOrder(req, res) {
 
   const products = await readArray(PRODUCTS_KEY);
   if (!products) return sendJson(res, 503, { error: 'O catálogo compartilhado ainda está sendo configurado. Tente novamente mais tarde.' });
+  const gateway = await payments.settings();
+  const orderToken = req.headers['x-order-token'];
+  if (gateway.enabled && (typeof orderToken !== 'string' || !/^[a-f0-9-]{32,64}$/i.test(orderToken))) {
+    return sendJson(res, 400, { error: 'Atualize a página antes de finalizar o pedido.' });
+  }
+  const document = cleanText(body.document, 30).replace(/\D/g, '');
+  if (gateway.enabled && (!payments.validDocument(document) || !/^\d{10,13}$/.test(phone.replace(/\D/g, '')))) {
+    return sendJson(res, 400, { error: 'Informe um CPF/CNPJ válido e confira o WhatsApp.' });
+  }
+  const sales = (await readArray(ORDERS_KEY)) || [];
+  const tokenHash = typeof orderToken === 'string' ? payments.digest(orderToken) : '';
+  const requestHash = payments.digest(JSON.stringify({ items: body.items, customer, email, phone, delivery, document }));
+  const previous = tokenHash && sales.find(sale => sale.paymentTokenHash === tokenHash);
+  if (previous) {
+    if (previous.requestHash !== requestHash) return sendJson(res, 409, { error: 'O pedido anterior já foi enviado. Recarregue para iniciar outro pedido.' });
+    if (previous.gateway === 'blackcat' && !previous.payment?.copyPaste) {
+      return sendJson(res, 409, { error: `O pedido ${previous.id} aguarda conferência da cobrança pela loja. Não refaça o pedido.` });
+    }
+    return sendJson(res, 200, { order: payments.publicOrder(previous), products });
+  }
   const items = [];
   for (const requested of body.items) {
     const product = products.find((entry) => entry.id === requested.productId);
@@ -119,9 +140,9 @@ async function createOrder(req, res) {
       if (quantity > product.stock) return sendJson(res, 409, { error: `Estoque insuficiente para ${product.name}.` });
       product.stock -= quantity;
     }
+    if (!Number.isFinite(Number(product.price)) || Number(product.price) <= 0) return sendJson(res, 400, { error: 'Produto com preço inválido. Entre em contato com a loja.' });
     items.push({ productId: product.id, productName: cleanText(product.name, 160), quantity, unitPrice: Number(product.price) || 0 });
   }
-  const sales = (await readArray(ORDERS_KEY)) || [];
   if (sales.length >= 5000) return sendJson(res, 507, { error: 'O histórico de pedidos atingiu o limite. Entre em contato com a loja.' });
   const subtotal = Number(items.reduce((total, item) => total + item.unitPrice * item.quantity, 0).toFixed(2));
   const order = {
@@ -130,18 +151,49 @@ async function createOrder(req, res) {
     productName: items.map((item) => `${item.quantity}× ${item.productName}`).join(', '),
     items, quantity: items.reduce((sum, item) => sum + item.quantity, 0),
     subtotal, shipping: 0, amount: subtotal, customer, email, phone, delivery: address,
-    createdAt: new Date().toISOString(), status: 'pending'
+    createdAt: new Date().toISOString(), status: 'pending',
+    paymentTokenHash: tokenHash, requestHash,
+    gateway: gateway.enabled ? 'blackcat' : 'manual'
   };
+  if (!Number.isSafeInteger(Math.round(subtotal * 100)) || subtotal <= 0) return sendJson(res, 400, { error: 'Valor de pedido inválido.' });
+  if (gateway.enabled && !process.env.BLACKCAT_API_KEY) return sendJson(res, 503, { error: 'O pagamento está temporariamente indisponível.' });
   sales.push(order);
-  await redisCommand(['SET', PRODUCTS_KEY, JSON.stringify(products)]);
-  await redisCommand(['SET', ORDERS_KEY, JSON.stringify(sales)]);
-  return sendJson(res, 201, { order, products });
+  // Persist before the external request. A timeout must not silently create another charge on retry.
+  await redisCommand(['EVAL', "redis.call('SET', KEYS[1], ARGV[1]); redis.call('SET', KEYS[2], ARGV[2]); return 1", 2,
+    PRODUCTS_KEY, ORDERS_KEY, JSON.stringify(products), JSON.stringify(sales)]);
+  if (gateway.enabled) {
+    try {
+      const siteUrl = process.env.WALKCARDS_PUBLIC_URL || '';
+      const postbackUrl = /^https:\/\//.test(siteUrl) ? `${siteUrl.replace(/\/+$/, '')}/api/blackcat-webhook` : null;
+      const sale = await payments.blackcat('/sales/create-sale', {
+        amount: Math.round(subtotal * 100), currency: 'BRL', paymentMethod: 'pix',
+        items: items.map(item => ({ title: item.productName, unitPrice: Math.round(item.unitPrice * 100), quantity: item.quantity, tangible: true })),
+        customer: { name: customer, email, phone: phone.replace(/\D/g, ''), document: { number: document, type: document.length === 11 ? 'cpf' : 'cnpj' } },
+        shipping: { name: address.recipient, street: address.street, number: address.number, complement: address.complement,
+          neighborhood: address.neighborhood, city: address.city, state: address.state, zipCode: postalCode },
+        pix: { expiresInDays: 1 }, externalRef: order.id, ...(postbackUrl ? { postbackUrl } : {})
+      });
+      if (typeof sale.transactionId !== 'string' || sale.amount !== Math.round(subtotal * 100)) throw new Error('Resposta inválida.');
+      order.payment = { transactionId: sale.transactionId, status: sale.status,
+        copyPaste: sale.paymentData?.copyPaste || sale.paymentData?.qrCode || '', expiresAt: sale.paymentData?.expiresAt || null };
+      await redisCommand(['SET', ORDERS_KEY, JSON.stringify(sales)]);
+      if (!order.payment.copyPaste) throw new Error('Cobrança sem código Pix.');
+    } catch {
+      return sendJson(res, 503, { error: `O pedido ${order.id} foi registrado, mas a cobrança precisa ser conferida pela loja. Não refaça o pedido; entre em contato informando esse número.` });
+    }
+  }
+  return sendJson(res, 201, { order: payments.publicOrder(order), products });
 }
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  let lease;
   try {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+      lease = await payments.lock();
+      if (!lease) return sendJson(res, 409, { error: 'A loja está atualizando um pedido. Aguarde alguns segundos e tente novamente.' });
+    }
     if (req.method === 'GET') {
       const products = await readArray(PRODUCTS_KEY);
       const inventoryPreset = await redisCommand(['GET', INVENTORY_PRESET_KEY]);
@@ -171,6 +223,7 @@ module.exports = async function handler(req, res) {
       const sales = (await readArray(ORDERS_KEY)) || [];
       const order = sales.find((item) => item.id === body.id);
       if (!order) return sendJson(res, 404, { error: 'Pedido não encontrado.' });
+      if (order.gateway === 'blackcat') return sendJson(res, 409, { error: 'Consulte o pagamento na Blackcat. Pedidos do gateway não podem ser confirmados ou cancelados manualmente.' });
       if (body.action === 'reported') {
         order.customerReportedPaid = true;
         order.customerReportedPaidAt = new Date().toISOString();
@@ -191,12 +244,14 @@ module.exports = async function handler(req, res) {
         }
       }
       await redisCommand(['SET', ORDERS_KEY, JSON.stringify(sales)]);
-      return sendJson(res, 200, { order });
+      return sendJson(res, 200, { order: payments.publicOrder(order) });
     }
 
     if (req.method === 'DELETE') {
       if (!authenticated(req)) return sendJson(res, 401, { error: 'Entre no painel para limpar os pedidos.' });
       if (!csrfValid(req)) return sendJson(res, 403, { error: 'Sessão inválida. Atualize o painel e tente novamente.' });
+      const orders = (await readArray(ORDERS_KEY)) || [];
+      if (orders.some(order => order.gateway === 'blackcat')) return sendJson(res, 409, { error: 'O histórico contém cobranças Blackcat e precisa ser preservado para conciliação.' });
       await redisCommand(['DEL', ORDERS_KEY]);
       return sendJson(res, 200, { ok: true });
     }
@@ -206,5 +261,7 @@ module.exports = async function handler(req, res) {
   } catch (error) {
     console.error('Falha ao acessar os dados compartilhados da loja.', error.message);
     return sendJson(res, 503, { error: 'Não foi possível acessar os dados compartilhados. Confira o Redis da Vercel.' });
+  } finally {
+    if (lease) await payments.unlock(lease).catch(() => {});
   }
 };

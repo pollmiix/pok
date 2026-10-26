@@ -337,6 +337,7 @@
           <label class="checkout-fields-label">Nome completo<input id="buyer-name" name="name" type="text" maxlength="80" autocomplete="name" required></label>
           <label class="checkout-fields-label">E-mail<input id="buyer-email" name="email" type="email" maxlength="120" autocomplete="email" required></label>
           <label class="checkout-fields-label">WhatsApp<input id="buyer-phone" name="phone" type="tel" maxlength="25" autocomplete="tel" placeholder="(11) 99999-9999" required></label>
+          <label class="checkout-fields-label hidden" id="buyer-document-label">CPF ou CNPJ<input id="buyer-document" name="document" type="text" inputmode="numeric" maxlength="18" autocomplete="off" placeholder="Somente números"><small>Necessário para emitir a cobrança Pix.</small></label>
         </section>
         <section class="checkout-section">
           <h3>Endereço de entrega</h3>
@@ -372,7 +373,7 @@
           <div><span>Frete</span><strong id="delivery-shipping">A combinar</strong></div>
           <div class="delivery-summary-total"><span>Subtotal sem frete</span><strong id="delivery-total">R$ 0,00</strong></div>
         </section>
-        <p class="privacy-copy">O PIX corresponde ao subtotal dos produtos; o frete será confirmado à parte. Seus dados e o pedido serão enviados ao servidor da loja para registro e atendimento.</p>
+        <p class="privacy-copy">O PIX corresponde ao subtotal dos produtos; o frete será confirmado à parte. Seus dados e o pedido serão enviados ao servidor da loja e ao provedor de pagamento para processar a compra.</p>
         <button class="checkout-submit" id="place-order" type="submit">Ir para o pagamento <span aria-hidden="true">→</span></button>
       </form>
     </section>

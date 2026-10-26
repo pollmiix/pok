@@ -88,6 +88,53 @@ function initializeDashboard() {
   }
 
   const csrfToken = () => document.querySelector('input[name="csrf_token"]')?.value || "";
+  async function gatewayRequest(body) {
+    const response = await fetch('/api/gateway-settings', body ? {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
+      body: JSON.stringify(body)
+    } : { cache: 'no-store' });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Não foi possível configurar o gateway.');
+    return result;
+  }
+  async function loadGateway() {
+    if (!$('#gateway-settings-form')) return;
+    try {
+      const settings = await gatewayRequest();
+      $('#gateway-enabled').checked = settings.enabled;
+      $('#gateway-status').textContent = settings.enabled ? 'Blackcat ativada para novos pedidos Pix.' : 'Blackcat desativada. O checkout usa Pix manual.';
+      $('#gateway-key-status').textContent = settings.keyConfigured
+        ? 'Chave privada configurada no servidor.' : 'Configure a variável BLACKCAT_API_KEY na hospedagem para conectar sua conta.';
+      $('#gateway-enabled').disabled = !settings.keyConfigured && !settings.enabled;
+      $('#gateway-save').disabled = false;
+      $('#gateway-test').disabled = !settings.keyConfigured;
+    } catch (error) {
+      $('#gateway-status').textContent = error.message;
+    }
+  }
+  $('#gateway-settings-form')?.addEventListener('submit', async event => {
+    event.preventDefault();
+    $('#gateway-save').disabled = true;
+    try {
+      await gatewayRequest({ enabled: $('#gateway-enabled').checked });
+      await loadGateway();
+      showToast('Configuração do gateway salva.');
+    } catch (error) {
+      $('#gateway-status').textContent = error.message;
+      $('#gateway-save').disabled = false;
+    }
+  });
+  $('#gateway-test')?.addEventListener('click', async () => {
+    $('#gateway-test').disabled = true;
+    $('#gateway-status').textContent = 'Testando conexão…';
+    try {
+      const result = await gatewayRequest({ action: 'test' });
+      $('#gateway-status').textContent = `Conexão confirmada: ${result.seller}. Nenhuma cobrança foi criada.`;
+    } catch (error) {
+      $('#gateway-status').textContent = error.message;
+    } finally { $('#gateway-test').disabled = false; }
+  });
+  loadGateway();
   async function loadSharedPixSettings() {
     try {
       const response = await fetch("/api/pix-settings", { cache: "no-store" });
@@ -242,9 +289,9 @@ function initializeDashboard() {
 
   function saleRow(sale, compact) {
     const paid = sale.status === "paid";
-    const cancelled = sale.status === "cancelled";
+    const cancelled = sale.status === "cancelled" || sale.status === 'refunded';
     const customerReportedPaid = sale.customerReportedPaid && sale.status === "pending";
-    const badge = `<span class="pill ${paid || customerReportedPaid ? "" : cancelled ? "cancelled" : "example"} ${customerReportedPaid ? "reported-payment" : ""}">${paid ? "Pago" : cancelled ? "Cancelado" : customerReportedPaid ? "Cliente informou pagamento" : "Aguardando PIX"}</span>`;
+    const badge = `<span class="pill ${paid || customerReportedPaid ? "" : cancelled ? "cancelled" : "example"} ${customerReportedPaid ? "reported-payment" : ""}">${paid ? "Pago" : sale.status === 'refunded' ? 'Estornado' : cancelled ? "Cancelado" : customerReportedPaid ? "Cliente informou pagamento" : "Aguardando PIX"}</span>`;
     const amountClass = `money-cell${customerReportedPaid ? " reported-payment-value" : ""}`;
     const delivery = sale.delivery?.method === "delivery"
       ? `${sale.delivery.street}, ${sale.delivery.number}${sale.delivery.complement ? `, ${sale.delivery.complement}` : ""} - ${sale.delivery.neighborhood}, ${sale.delivery.city}/${sale.delivery.state} - CEP ${String(sale.delivery.postalCode || "").replace(/^(\d{5})(\d{3})$/, "$1-$2")}`
@@ -265,7 +312,10 @@ function initializeDashboard() {
       <td>${escapeHtml(dateTime(sale.createdAt))}</td>
       <td class="${amountClass}">${money(sale.amount)}</td>
       <td>${badge}</td>
-      <td>${sale.status !== "pending" ? "—" : `<div class="order-actions"><button class="product-action" type="button" data-confirm-payment="${escapeHtml(sale.id)}">Confirmar PIX</button><button class="product-action cancel-order" type="button" data-cancel-order="${escapeHtml(sale.id)}">Cancelar</button></div>`}</td>
+      <td>${sale.gateway === 'blackcat' ? sale.payment?.transactionId
+        ? `<button class="product-action" type="button" data-check-gateway="${escapeHtml(sale.id)}">Consultar Blackcat</button>`
+        : 'Conferir cobrança no painel Blackcat'
+        : sale.status !== "pending" ? "—" : `<div class="order-actions"><button class="product-action" type="button" data-confirm-payment="${escapeHtml(sale.id)}">Confirmar PIX</button><button class="product-action cancel-order" type="button" data-cancel-order="${escapeHtml(sale.id)}">Cancelar</button></div>`}</td>
     </tr>`;
   }
 
@@ -278,6 +328,23 @@ function initializeDashboard() {
     $("#sales-total-label").textContent = `${sorted.length} ${sorted.length === 1 ? "registro" : "registros"}`;
     $("#clear-orders-button").disabled = sorted.length === 0;
   }
+
+  $('#sales-body').addEventListener('click', async event => {
+    const button = event.target.closest('[data-check-gateway]');
+    if (!button) return;
+    button.disabled = true;
+    try {
+      const response = await fetch('/api/payment-status', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
+        body: JSON.stringify({ id: button.dataset.checkGateway })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Não foi possível consultar o pagamento.');
+      await loadSharedDashboardData();
+      showToast('Situação do pagamento consultada.');
+    } catch (error) { showToast(error.message); }
+    finally { button.disabled = false; }
+  });
 
   function productRow(product) {
     const stockLabel = product.stockVerified === true && Number.isInteger(product.stock) ? String(product.stock) : "—";
@@ -313,7 +380,7 @@ function initializeDashboard() {
   }
 
   function switchView(view) {
-    const titles = { overview: "Visão geral", sales: "Pedidos", products: "Produtos", pix: "Pagamento PIX" };
+    const titles = { overview: "Visão geral", sales: "Pedidos", products: "Produtos", pix: "Pagamento PIX", gateway: "Gateway de pagamento" };
     document.querySelectorAll(".view-panel").forEach((panel) => {
       panel.classList.toggle("hidden", panel.id !== `view-${view}`);
     });
@@ -322,6 +389,7 @@ function initializeDashboard() {
     });
     $("#page-title").textContent = titles[view] || titles.overview;
     if (view === "products") $("#product-search").focus();
+    if (view === "gateway") loadGateway();
     if (view === "pix") {
       $("#pix-owner").value = pixSettings.owner;
       $("#pix-key").value = pixSettings.key;

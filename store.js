@@ -627,25 +627,67 @@
     if (!$("#mini-cart-dialog").open) $("#mini-cart-dialog").showModal();
   }
 
+  let checkoutGateway = 'manual';
+  let checkoutToken = null;
+  let creatingOrder = false;
+  let paymentPoll;
+  let activeGatewayOrder = null;
+  async function loadCheckoutPayments() {
+    const response = await fetch('/api/pix-settings', { cache: 'no-store' });
+    const settings = await response.json();
+    if (!response.ok) throw new Error(settings.error || 'Não foi possível carregar o pagamento.');
+    checkoutGateway = settings.gateway === 'blackcat' ? 'blackcat' : 'manual';
+    pixSettings = { key: settings.key || '', owner: settings.owner || '' };
+    $('#buyer-document-label')?.classList.toggle('hidden', checkoutGateway !== 'blackcat');
+    if ($('#buyer-document')) $('#buyer-document').required = checkoutGateway === 'blackcat';
+  }
+
+  async function checkGatewayPayment() {
+    if (!activeGatewayOrder) return;
+    const checking = activeGatewayOrder.id;
+    const response = await fetch('/api/payment-status', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Order-Token': activeGatewayOrder.token },
+      body: JSON.stringify({ id: activeGatewayOrder.id })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Não foi possível consultar o pagamento.');
+    if (activeGatewayOrder?.id !== checking) return;
+    if (result.status === 'paid' || result.status === 'refunded' || result.status === 'cancelled') {
+      clearInterval(paymentPoll);
+      $('#payment-pending-banner').classList.add('hidden');
+      $('#payment-qr-wrap').classList.add('hidden');
+      $('#payment-reported-button').classList.add('hidden');
+      $('#payment-pix-copy').classList.add('hidden');
+      $('#payment-pix-code').value = '';
+      $('#payment-thanks').classList.remove('hidden');
+      $('#payment-thanks strong').textContent = result.status === 'paid' ? 'Pagamento confirmado!' : result.status === 'refunded' ? 'Pagamento estornado' : 'Cobrança cancelada ou expirada';
+      $('#payment-thanks p').textContent = result.status === 'paid' ? 'A loja recebeu a confirmação do Pix pela Blackcat.' : 'Entre em contato com a loja para acompanhar seu pedido.';
+    }
+    return result;
+  }
+
   async function createOrder(event) {
     event.preventDefault();
+    if (creatingOrder) return;
+    creatingOrder = true;
+    $('#place-order').disabled = true;
+    try { await submitOrder(); }
+    finally { creatingOrder = false; $('#place-order').disabled = false; }
+  }
+
+  async function submitOrder() {
     if (!cart.length) {
       showToast("Adicione um produto ao carrinho antes de continuar.");
       return;
     }
     try {
-      const response = await fetch("/api/pix-settings", { cache: "no-store" });
-      const settings = await response.json();
-      if (!response.ok) throw new Error(settings.error || "Não foi possível carregar as configurações de pagamento.");
-      if (settings.key) pixSettings = settings;
+      await loadCheckoutPayments();
     } catch (error) {
       console.error("Não foi possível carregar a chave Pix compartilhada.", error);
-      if (!pixSettings.key.trim()) {
-        showToast(error.message || "Não foi possível carregar a chave Pix. Tente novamente mais tarde.");
-        return;
-      }
+      showToast(error.message || "Não foi possível carregar o pagamento. Tente novamente mais tarde.");
+      return;
     }
-    if (!pixSettings.key.trim()) {
+    if (checkoutGateway !== 'blackcat' && !pixSettings.key.trim()) {
       showToast("A loja ainda não cadastrou a chave Pix. Entre em contato com a loja.");
       return;
     }
@@ -653,6 +695,12 @@
     const customer = $("#buyer-name").value.trim();
     const email = $("#buyer-email").value.trim();
     const phone = $("#buyer-phone").value.trim();
+    const buyerDocument = $('#buyer-document')?.value.replace(/\D/g, '') || '';
+    if (checkoutGateway === 'blackcat' && !/^\d{11}$|^\d{14}$/.test(buyerDocument)) {
+      showToast('Informe o CPF ou CNPJ para gerar o Pix.');
+      $('#buyer-document').focus();
+      return;
+    }
     if (!customer || !email || !phone) {
       showToast("Informe seu nome, e-mail e WhatsApp para identificar o pedido.");
       return;
@@ -694,20 +742,21 @@
     }
     let amount = orderTotal();
     let order = {
-      source: "store-checkout", items, customer, email, phone, delivery
+      source: "store-checkout", items, customer, email, phone, delivery, document: buyerDocument
     };
     try {
-      window.PixQr.buildPixPayload({ key: pixSettings.key, owner: pixSettings.owner, amount });
+      if (checkoutGateway !== 'blackcat') window.PixQr.buildPixPayload({ key: pixSettings.key, owner: pixSettings.owner, amount });
     } catch (error) {
       console.error("Não foi possível validar a chave PIX.", error);
       showToast(error.message || "Não foi possível gerar o QR Code PIX.");
       return;
     }
     let sharedOrder;
+    if (!checkoutToken) checkoutToken = crypto.randomUUID();
     try {
       const response = await fetch("/api/store-data", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", 'X-Order-Token': checkoutToken },
         body: JSON.stringify(order)
       });
       sharedOrder = await response.json();
@@ -726,7 +775,8 @@
     }
 
     try {
-      const pixPayload = window.PixQr.buildPixPayload({ key: pixSettings.key, owner: pixSettings.owner, amount });
+      const pixPayload = order.gateway === 'blackcat' ? order.payment.copyPaste
+        : window.PixQr.buildPixPayload({ key: pixSettings.key, owner: pixSettings.owner, amount });
       await window.PixQr.render($("#payment-pix-qr"), pixPayload, 220);
       $("#payment-pix-code").value = pixPayload;
     } catch (error) {
@@ -744,6 +794,16 @@
     $("#payment-qr-wrap").classList.remove("hidden");
     $("#payment-reported-button").classList.remove("hidden");
     $("#payment-thanks").classList.add("hidden");
+    $('#payment-pix-copy').classList.remove('hidden');
+    clearInterval(paymentPoll);
+    activeGatewayOrder = order.gateway === 'blackcat' ? { id: order.id, token: checkoutToken } : null;
+    checkoutToken = null;
+    $('#payment-reported-button').textContent = activeGatewayOrder ? 'Verificar pagamento' : 'Já fiz o pagamento';
+    $('#payment-pending-banner small').textContent = activeGatewayOrder
+      ? 'O pagamento será confirmado automaticamente pela Blackcat.' : 'A Walk Cards precisa conferir o recebimento do Pix.';
+    if (activeGatewayOrder) paymentPoll = setInterval(() => {
+      if (document.visibilityState === 'visible') checkGatewayPayment().catch(() => {});
+    }, 15000);
     $("#cart-view").classList.add("hidden");
     $("#buyer-view").classList.add("hidden");
     $("#payment-view").classList.remove("hidden");
@@ -1065,6 +1125,7 @@
     $("#buyer-view").classList.remove("hidden");
     $("#payment-view").classList.add("hidden");
     renderDeliverySummary();
+    loadCheckoutPayments().catch(error => showToast(error.message));
   });
   $("#back-to-cart").addEventListener("click", () => {
     $("#checkout-dialog").classList.remove("checkout-fullscreen");
@@ -1080,6 +1141,13 @@
   $("#add-more-items").addEventListener("click", () => $("#checkout-dialog").close());
   $("#checkout-form").addEventListener("submit", createOrder);
   $("#payment-reported-button").addEventListener("click", async () => {
+    if (activeGatewayOrder) {
+      try {
+        const result = await checkGatewayPayment();
+        if (result?.status === 'pending') showToast('Pagamento ainda não confirmado. Aguarde alguns segundos.');
+      } catch (error) { showToast(error.message); }
+      return;
+    }
     const orderId = $("#payment-reported-button").dataset.orderId;
     try {
       const response = await fetch("/api/store-data", {

@@ -70,7 +70,9 @@ module.exports = async function handler(req, res) {
     const csrfToken = crypto.randomBytes(32).toString('hex');
     const authenticated = isAuthenticated(cookies[AUTH_COOKIE], secret);
     const html = authenticated
-      ? render(PANEL_TEMPLATE, { CSRF_TOKEN: csrfToken })
+      ? render(PANEL_TEMPLATE
+        .replace('</nav>', '<button class="nav-item" type="button" data-view="gateway"><span class="nav-icon">◈</span>Gateway</button></nav>')
+        .replace('<section class="view-panel hidden" id="view-pix">', require('./_lib/gateway-panel') + '<section class="view-panel hidden" id="view-pix">'), { CSRF_TOKEN: csrfToken })
       : render(LOGIN_TEMPLATE, {
           CSRF_TOKEN: csrfToken,
           DISABLED: secret ? '' : 'disabled',
