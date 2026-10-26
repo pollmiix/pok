@@ -706,3 +706,13 @@ button { cursor: pointer; }
 
 .product-detail-price .product-original-price { display: block; color: #7d8196; font-size: 15px; font-weight: 400; margin-bottom: 6px; }
 .product-detail-price > small:not(.product-original-price) { font-size: 15px; }
+.pix-announcement { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 14px 20px; color: #fff; background: #35136e; text-align: left; }
+.pix-announcement-badge { flex-shrink: 0; padding: 7px 11px; border-radius: 8px; color: #35136e; background: #ffcf32; font-size: 20px; font-weight: 800; line-height: 1.2; }
+.pix-announcement p { margin: 0; font-size: 16px; line-height: 1.4; }
+.pix-announcement small { display: block; margin-top: 3px; color: #eee5ff; font-size: 12px; line-height: 1.4; }
+@media (max-width: 600px) {
+  .pix-announcement { gap: 11px; padding: 12px 14px; }
+  .pix-announcement-badge { padding: 7px 8px; font-size: 17px; }
+  .pix-announcement p { font-size: 13px; }
+  .pix-announcement small { font-size: 10px; }
+}
