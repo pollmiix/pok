@@ -97,6 +97,65 @@ function initializeDashboard() {
     if (!response.ok) throw new Error(result.error || 'Não foi possível configurar o gateway.');
     return result;
   }
+  let gatewayQrCharge = null;
+  let gatewayQrRequestId = null;
+  let gatewayQrBusy = false;
+  async function renderGatewayQr(charge) {
+    gatewayQrCharge = charge;
+    const labels = { PENDING: 'Aguardando pagamento', PAID: 'Pagamento confirmado', CANCELLED: 'Cancelada ou expirada', REFUNDED: 'Estornada' };
+    const expired = charge.expiresAt && new Date(charge.expiresAt).getTime() <= Date.now();
+    const payable = charge.status === 'PENDING' && !expired && Boolean(charge.copyPaste);
+    $('#gateway-qr-result').classList.remove('hidden');
+    $('#gateway-qr-status').textContent = expired && charge.status === 'PENDING' ? 'Cobrança expirada. Consulte a situação na Blackcat.' : labels[charge.status] || 'Consulte a situação do pagamento.';
+    $('#gateway-qr-details').textContent = `${charge.transactionId} • ${money(charge.amount / 100)}${charge.expiresAt && Number.isFinite(new Date(charge.expiresAt).getTime()) ? ` • Validade: ${dateTime(charge.expiresAt)}` : ''}`;
+    $('#gateway-qr-code').value = payable ? charge.copyPaste : '';
+    $('#gateway-qr-copy').disabled = !payable;
+    $('#gateway-qr-canvas').classList.toggle('hidden', !payable);
+    if (payable) {
+      try { await window.PixQr.render($('#gateway-qr-canvas'), charge.copyPaste, 240); }
+      catch { $('#gateway-qr-status').textContent = 'Cobrança criada. O QR Code não carregou; use o Pix copia e cola abaixo.'; }
+    }
+  }
+  $('#gateway-qr-form')?.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (gatewayQrBusy) return;
+    gatewayQrBusy = true;
+    $('#gateway-qr-generate').disabled = true;
+    $('#gateway-qr-status').textContent = 'Gerando cobrança na Blackcat…';
+    gatewayQrRequestId ||= crypto.randomUUID();
+    try {
+      const result = await gatewayRequest({
+        action: 'test-qr', requestId: gatewayQrRequestId,
+        amount: Math.round(Number($('#gateway-qr-amount').value) * 100),
+        name: $('#gateway-qr-name').value.trim(), email: $('#gateway-qr-email').value.trim(),
+        phone: $('#gateway-qr-phone').value, document: $('#gateway-qr-document').value
+      });
+      await renderGatewayQr(result.charge);
+      gatewayQrRequestId = null;
+      $('#gateway-qr-document').value = '';
+      $('#gateway-qr-consent').checked = false;
+      $('#gateway-qr-generate').textContent = 'Gerar outra cobrança de teste';
+    } catch (error) { $('#gateway-qr-status').textContent = error.message; }
+    finally { gatewayQrBusy = false; $('#gateway-qr-generate').disabled = false; }
+  });
+  $('#gateway-qr-check')?.addEventListener('click', async () => {
+    if (!gatewayQrCharge) return;
+    $('#gateway-qr-check').disabled = true;
+    try {
+      const result = await gatewayRequest({ action: 'test-qr-status', requestId: gatewayQrCharge.requestId });
+      await renderGatewayQr(result.charge);
+    } catch (error) { $('#gateway-qr-status').textContent = error.message; }
+    finally { $('#gateway-qr-check').disabled = false; }
+  });
+  $('#gateway-qr-copy')?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText($('#gateway-qr-code').value);
+      showToast('Pix copiado.');
+    } catch {
+      $('#gateway-qr-code').select();
+      showToast('Selecione e copie o código Pix.');
+    }
+  });
   async function loadGateway() {
     if (!$('#gateway-settings-form')) return;
     try {
@@ -108,6 +167,8 @@ function initializeDashboard() {
       $('#gateway-enabled').disabled = !settings.keyConfigured && !settings.enabled;
       $('#gateway-save').disabled = false;
       $('#gateway-test').disabled = !settings.keyConfigured;
+      if ($('#gateway-qr-generate')) $('#gateway-qr-generate').disabled = !settings.keyConfigured || gatewayQrBusy;
+      if (settings.testCharge && !gatewayQrCharge) await renderGatewayQr(settings.testCharge);
     } catch (error) {
       $('#gateway-status').textContent = error.message;
     }

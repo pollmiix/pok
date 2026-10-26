@@ -248,3 +248,6 @@ tbody tr:hover td { background: #fdfcff; }
   .product-toolbar { align-items: flex-start; flex-direction: column; }
   .search-box { width: 100%; }
 }
+.gateway-qr-card { margin-top: 24px; }
+.gateway-qr-card canvas { max-width: 100%; height: auto; display: block; margin: 16px 0; }
+.gateway-qr-card textarea { width: 100%; padding: 12px; resize: vertical; overflow-wrap: anywhere; }

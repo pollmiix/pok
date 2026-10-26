@@ -11,6 +11,12 @@ A opção **Gateway** fica no painel autenticado da loja. O comprador continua e
 
 O teste consulta os dados do vendedor e não cria pagamentos. A chave pública e o código de split não são necessários nesta integração. Nenhum split é enviado.
 
+## QR Code de teste no painel
+
+Em **Gateway → Testar QR Code Blackcat**, informe valor entre R$ 1,00 e R$ 100,00 e os dados reais do pagador. Marque a ciência de que a cobrança é real e clique em **Gerar QR Code de teste**. A API pode exigir um valor mínimo maior conforme sua conta. O teste de conexão permanece separado e não cria cobranças.
+
+O QR Code e o Pix copia e cola vêm da Blackcat. **Consultar pagamento** verifica a situação pela API. Pagar esse Pix movimenta dinheiro real e pode gerar taxas. A última cobrança fica disponível no painel por sete dias; os dados pessoais do formulário não são salvos no navegador nem nesse registro. O teste não cria venda de produto nem reserva estoque. Em caso de resposta incerta, confira a referência `TEST-…` na Blackcat antes de gerar outra cobrança.
+
 ## Comportamento
 
 - O servidor calcula os valores pelo catálogo compartilhado; a API recebe valores em centavos.

@@ -44,14 +44,18 @@ test('Blackcat payment lifecycle with mocked provider and storage', async t => {
     if (url.endsWith('/create-sale')) {
       creates++;
       const body = JSON.parse(options.body);
-      assert.equal(body.amount, 2590);
-      assert.equal(body.items[0].unitPrice, 2590);
+      const isPanelTest = body.externalRef?.startsWith('TEST-');
+      assert.equal(body.amount, isPanelTest ? 100 : 2590);
+      assert.equal(body.items[0].unitPrice, body.amount);
       assert.equal(body.customer.document.type, 'cpf');
-      assert.equal(body.shipping.zipCode, '01001000');
-      assert.equal(body.postbackUrl, 'https://loja.example/api/blackcat-webhook');
+      if (isPanelTest) { assert.equal(body.items[0].tangible, false); assert.equal(body.shipping, undefined); }
+      else {
+        assert.equal(body.shipping.zipCode, '01001000');
+        assert.equal(body.postbackUrl, 'https://loja.example/api/blackcat-webhook');
+      }
       if (timeout) throw new Error('timeout');
       return { ok: true, json: async () => ({ success: true, data: {
-        transactionId: 'TXN-test', amount: 2590, status: 'PENDING', paymentData: { copyPaste: '000201-test-pix' }
+        transactionId: 'TXN-test', amount: body.amount, status: 'PENDING', paymentData: { copyPaste: '000201-test-pix' }
       } }) };
     }
     if (url.endsWith('/status')) return { ok: true, json: async () => ({ success: true, data: {
@@ -166,6 +170,46 @@ test('Blackcat payment lifecycle with mocked provider and storage', async t => {
       assert.equal(result.data.order.gateway, 'manual');
       assert.equal(creates, before);
       process.env.BLACKCAT_API_KEY = 'test-server-secret';
+    });
+    const qrRequest = { action: 'test-qr', requestId: crypto.randomUUID(), amount: 100,
+      name: body.customer, email: body.email, phone: body.phone, document: body.document };
+    await t.test('panel QR generation is authenticated, validates data and never changes inventory', async () => {
+      seed(); timeout = false;
+      assert.equal((await invoke(settings, 'POST', qrRequest)).statusCode, 401);
+      assert.equal((await invoke(settings, 'POST', qrRequest, { cookie: adminHeaders.cookie })).statusCode, 403);
+      const before = creates;
+      assert.equal((await invoke(settings, 'POST', { ...qrRequest, amount: 1 }, adminHeaders)).statusCode, 400);
+      assert.equal((await invoke(settings, 'POST', { ...qrRequest, document: '123' }, adminHeaders)).statusCode, 400);
+      assert.equal(creates, before);
+      const result = await invoke(settings, 'POST', qrRequest, adminHeaders);
+      assert.equal(result.statusCode, 201);
+      assert.equal(result.data.charge.amount, 100);
+      assert.equal(result.data.charge.copyPaste, '000201-test-pix');
+      assert.equal(JSON.parse(db.get('walkcards:products'))[0].stock, 4);
+      assert.equal(db.has(p.ORDERS_KEY), false);
+      assert.ok(!JSON.stringify([...db.values()]).includes(body.document));
+      assert.equal((await invoke(settings, 'POST', qrRequest, adminHeaders)).statusCode, 200);
+      assert.equal(creates, before + 1);
+      assert.equal((await invoke(settings, 'POST', { ...qrRequest, amount: 200 }, adminHeaders)).statusCode, 409);
+      assert.equal((await invoke(settings, 'POST', { ...qrRequest, requestId: crypto.randomUUID() }, adminHeaders)).statusCode, 429);
+      const loaded = await invoke(settings, 'GET', null, adminHeaders);
+      assert.equal(loaded.data.testCharge.requestId, qrRequest.requestId);
+    });
+    await t.test('panel test payment status is verified with the provider', async () => {
+      remoteStatus = 'PAID'; remoteAmount = 100;
+      const result = await invoke(settings, 'POST', { action: 'test-qr-status', requestId: qrRequest.requestId, status: 'CANCELLED' }, adminHeaders);
+      assert.equal(result.statusCode, 200);
+      assert.equal(result.data.charge.status, 'PAID');
+      assert.equal((await invoke(settings, 'GET', null, adminHeaders)).data.testCharge.status, 'PAID');
+      assert.equal((await invoke(settings, 'POST', { action: 'test-qr-status', requestId: crypto.randomUUID() }, adminHeaders)).statusCode, 404);
+    });
+    await t.test('uncertain test charge is not submitted again after timeout', async () => {
+      seed(); timeout = true;
+      const before = creates;
+      const request = { ...qrRequest, requestId: crypto.randomUUID() };
+      assert.equal((await invoke(settings, 'POST', request, adminHeaders)).statusCode, 503);
+      assert.equal((await invoke(settings, 'POST', request, adminHeaders)).statusCode, 409);
+      assert.equal(creates, before + 1);
     });
     await t.test('frontend JavaScript parses', () => {
       for (const file of ['store.js', 'admin.js']) new vm.Script(fs.readFileSync(file, 'utf8'), { filename: file });

@@ -1,16 +1,18 @@
 const p = require('./_lib/payments');
+const qrTest = require('./_lib/gateway-test');
 
 module.exports = async function handler(req, res) {
   if (!p.admin(req)) return p.json(res, 401, { error: 'Entre no painel para configurar o gateway.' });
   try {
     if (req.method === 'GET') {
-      return p.json(res, 200, { ...await p.settings(), keyConfigured: Boolean(process.env.BLACKCAT_API_KEY) });
+      return p.json(res, 200, { ...await p.settings(), keyConfigured: Boolean(process.env.BLACKCAT_API_KEY), testCharge: await qrTest.latest() });
     }
     if (req.method !== 'POST') {
       res.setHeader('Allow', 'GET, POST');
       return p.json(res, 405, { error: 'Método não permitido.' });
     }
     if (!p.csrf(req)) return p.json(res, 403, { error: 'Sessão inválida. Atualize o painel.' });
+    if (['test-qr', 'test-qr-status'].includes(req.body?.action)) return await qrTest.handle(req, res);
     if (req.body?.action === 'test') {
       const seller = await p.blackcat('/sales/seller');
       return p.json(res, 200, { connected: true, seller: String(seller.name || seller.legalName || 'Conta Blackcat') });
