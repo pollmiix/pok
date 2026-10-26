@@ -704,3 +704,5 @@ button { cursor: pointer; }
 }
 
 
+.product-detail-price .product-original-price { display: block; color: #7d8196; font-size: 15px; font-weight: 400; margin-bottom: 6px; }
+.product-detail-price > small:not(.product-original-price) { font-size: 15px; }

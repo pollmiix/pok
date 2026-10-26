@@ -1,5 +1,6 @@
 const crypto = require('node:crypto');
 const payments = require('./_lib/payments');
+const pricing = require('../pricing');
 
 const AUTH_COOKIE = 'walkcards_admin';
 const CSRF_COOKIE = 'walkcards_csrf';
@@ -141,21 +142,24 @@ async function createOrder(req, res) {
       product.stock -= quantity;
     }
     if (!Number.isFinite(Number(product.price)) || Number(product.price) <= 0) return sendJson(res, 400, { error: 'Produto com preço inválido. Entre em contato com a loja.' });
-    items.push({ productId: product.id, productName: cleanText(product.name, 160), quantity, unitPrice: Number(product.price) || 0 });
+    items.push({ productId: product.id, productName: cleanText(product.name, 160), quantity,
+      originalUnitPrice: pricing.cents(product.price) / 100, unitPrice: pricing.pixPrice(product.price) });
   }
   if (sales.length >= 5000) return sendJson(res, 507, { error: 'O histórico de pedidos atingiu o limite. Entre em contato com a loja.' });
-  const subtotal = Number(items.reduce((total, item) => total + item.unitPrice * item.quantity, 0).toFixed(2));
+  const subtotal = items.reduce((total, item) => total + pricing.cents(item.originalUnitPrice) * item.quantity, 0) / 100;
+  const amount = items.reduce((total, item) => total + pricing.cents(item.unitPrice) * item.quantity, 0) / 100;
   const order = {
     id: `PC-${Date.now().toString().slice(-8)}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
     source: 'store-checkout', productId: items[0].productId,
     productName: items.map((item) => `${item.quantity}× ${item.productName}`).join(', '),
     items, quantity: items.reduce((sum, item) => sum + item.quantity, 0),
-    subtotal, shipping: 0, amount: subtotal, customer, email, phone, delivery: address,
+    subtotal, discountPercent: 10, discountAmount: Number((subtotal - amount).toFixed(2)),
+    shipping: 0, amount, customer, email, phone, delivery: address,
     createdAt: new Date().toISOString(), status: 'pending',
     paymentTokenHash: tokenHash, requestHash,
     gateway: gateway.enabled ? 'blackcat' : 'manual'
   };
-  if (!Number.isSafeInteger(Math.round(subtotal * 100)) || subtotal <= 0) return sendJson(res, 400, { error: 'Valor de pedido inválido.' });
+  if (!Number.isSafeInteger(Math.round(amount * 100)) || amount <= 0) return sendJson(res, 400, { error: 'Valor de pedido inválido.' });
   if (gateway.enabled && !process.env.BLACKCAT_API_KEY) return sendJson(res, 503, { error: 'O pagamento está temporariamente indisponível.' });
   sales.push(order);
   // Persist before the external request. A timeout must not silently create another charge on retry.
@@ -166,14 +170,14 @@ async function createOrder(req, res) {
       const siteUrl = process.env.WALKCARDS_PUBLIC_URL || '';
       const postbackUrl = /^https:\/\//.test(siteUrl) ? `${siteUrl.replace(/\/+$/, '')}/api/blackcat-webhook` : null;
       const sale = await payments.blackcat('/sales/create-sale', {
-        amount: Math.round(subtotal * 100), currency: 'BRL', paymentMethod: 'pix',
+        amount: Math.round(amount * 100), currency: 'BRL', paymentMethod: 'pix',
         items: items.map(item => ({ title: item.productName, unitPrice: Math.round(item.unitPrice * 100), quantity: item.quantity, tangible: true })),
         customer: { name: customer, email, phone: phone.replace(/\D/g, ''), document: { number: document, type: document.length === 11 ? 'cpf' : 'cnpj' } },
         shipping: { name: address.recipient, street: address.street, number: address.number, complement: address.complement,
           neighborhood: address.neighborhood, city: address.city, state: address.state, zipCode: postalCode },
         pix: { expiresInDays: 1 }, externalRef: order.id, ...(postbackUrl ? { postbackUrl } : {})
       });
-      if (typeof sale.transactionId !== 'string' || sale.amount !== Math.round(subtotal * 100)) throw new Error('Resposta inválida.');
+      if (typeof sale.transactionId !== 'string' || sale.amount !== Math.round(amount * 100)) throw new Error('Resposta inválida.');
       order.payment = { transactionId: sale.transactionId, status: sale.status,
         copyPaste: sale.paymentData?.copyPaste || sale.paymentData?.qrCode || '', expiresAt: sale.paymentData?.expiresAt || null };
       await redisCommand(['SET', ORDERS_KEY, JSON.stringify(sales)]);

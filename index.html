@@ -25,7 +25,8 @@
   <script src="https://accounts.google.com/gsi/client" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.4.4/qrcode.min.js" defer></script>
   <script src="./pix-qr.js" defer></script>
-  <script src="./store.js" defer></script>
+  <script src="./pricing.js" defer></script>
+  <script src="./store.js?v=pix10" defer></script>
 </head>
 <body>
   <svg class="image-filters" aria-hidden="true" focusable="false">
@@ -198,7 +199,7 @@
         <strong class="product-detail-price" id="product-detail-price"></strong>
         <small class="detail-price-note">Preço de referência; confirme o valor atualizado com a loja.</small>
         <p class="product-detail-stock" id="product-detail-stock"></p>
-        <div class="product-detail-pix">Formas de pagamento: consulte a loja</div>
+        <div class="product-detail-pix">10% de desconto no Pix em todos os produtos</div>
         <div class="product-detail-description">
           <h3>Descrição</h3>
           <p id="product-detail-description"></p>
@@ -286,8 +287,9 @@
             </div>
             <div class="cart-breakdown">
               <div><span>Subtotal dos produtos</span><strong id="cart-subtotal">R$ 0,00</strong></div>
+              <div><span>Desconto no Pix (10%)</span><strong id="cart-pix-discount">− R$ 0,00</strong></div>
               <div><span>Frete</span><strong id="cart-shipping">A combinar</strong></div>
-              <div class="cart-final-total"><span>Subtotal (sem frete)</span><strong id="cart-total">R$ 0,00</strong></div>
+              <div class="cart-final-total"><span>Total no Pix (sem frete)</span><strong id="cart-total">R$ 0,00</strong></div>
               <small id="cart-payment-note">Preço e forma de pagamento sujeitos à confirmação da loja.</small>
             </div>
             <button class="checkout-submit cart-continue" id="continue-checkout" type="button">continuar para pagamento</button>
@@ -344,8 +346,9 @@
           <h3>Resumo do pedido</h3>
           <div class="checkout-order-lines" id="checkout-order-lines"></div>
           <div><span>Subtotal</span><strong id="delivery-subtotal">R$ 0,00</strong></div>
+          <div><span>Desconto no Pix (10%)</span><strong id="delivery-pix-discount">− R$ 0,00</strong></div>
           <div><span>Frete</span><strong id="delivery-shipping">A combinar</strong></div>
-          <div class="delivery-summary-total"><span>Subtotal sem frete</span><strong id="delivery-total">R$ 0,00</strong></div>
+          <div class="delivery-summary-total"><span>Total no Pix sem frete</span><strong id="delivery-total">R$ 0,00</strong></div>
         </section>
         <p class="privacy-copy">O PIX corresponde ao subtotal dos produtos; o frete será confirmado à parte. Seus dados e o pedido serão enviados ao servidor da loja e ao provedor de pagamento para processar a compra.</p>
         <button class="checkout-submit" id="place-order" type="submit">Ir para o pagamento <span aria-hidden="true">→</span></button>
@@ -382,7 +385,7 @@
     <div class="mini-cart-summary">
       <div class="mini-shipping-progress"><p id="mini-shipping-message">Você ganhou Frete Grátis na entrega Econômica!</p><div class="mini-shipping-line"><span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5h12v12H2zM14 9h4l4 4v4h-8zM6 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg></div><button id="mini-shipping-rules" type="button">Ver regras</button></div>
       <div class="mini-coupon-row"><label for="mini-coupon-code">Cupom de desconto</label><div class="mini-coupon-input"><input id="mini-coupon-code" type="text" placeholder="digite aqui" autocomplete="off"><button id="mini-coupon-apply" type="button">Aplicar</button></div></div>
-      <div class="mini-cart-totals"><div><span>Subtotal</span><strong id="mini-cart-subtotal">R$ 0,00</strong></div><div><span>Frete</span><strong id="mini-cart-shipping">A combinar</strong></div><div class="mini-cart-total"><span>Total (sem frete)</span><strong id="mini-cart-total">R$ 0,00</strong></div></div>
+      <div class="mini-cart-totals"><div><span>Subtotal</span><strong id="mini-cart-subtotal">R$ 0,00</strong></div><div><span>Desconto no Pix (10%)</span><strong id="mini-cart-pix-discount">− R$ 0,00</strong></div><div><span>Frete</span><strong id="mini-cart-shipping">A combinar</strong></div><div class="mini-cart-total"><span>Total no Pix (sem frete)</span><strong id="mini-cart-total">R$ 0,00</strong></div></div>
       <button class="mini-cart-full-button" id="view-full-cart" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3m-12 0h14v11H5z"/></svg> Ver carrinho</button>
       <button class="mini-cart-more-button" id="mini-cart-more" type="button">Adicionar mais itens</button>
     </div>

@@ -9,12 +9,14 @@ const settings = require('../api/gateway-settings');
 const status = require('../api/payment-status');
 const webhook = require('../api/blackcat-webhook');
 const adminPage = require('../api/admin');
+const pricing = require('../pricing');
 
 test('Blackcat payment lifecycle with mocked provider and storage', async t => {
   const originalFetch = global.fetch;
   const originalEnv = { ...process.env };
   const db = new Map();
-  let remoteStatus = 'PENDING', remoteAmount = 2590, creates = 0, timeout = false;
+  let remoteStatus = 'PENDING', remoteAmount = 2331, creates = 0, timeout = false;
+  let expectedSaleAmount = 2331, expectedUnitAmount = 2331;
   process.env.BLACKCAT_API_KEY = 'test-server-secret';
   process.env.WALKCARDS_ADMIN_PASSWORD = 'test-admin-password';
   process.env.KV_REST_API_URL = 'https://redis.example';
@@ -45,8 +47,9 @@ test('Blackcat payment lifecycle with mocked provider and storage', async t => {
       creates++;
       const body = JSON.parse(options.body);
       const isPanelTest = body.externalRef?.startsWith('TEST-');
-      assert.equal(body.amount, isPanelTest ? 100 : 2590);
-      assert.equal(body.items[0].unitPrice, body.amount);
+      assert.equal(body.amount, isPanelTest ? 100 : expectedSaleAmount);
+      assert.equal(body.items[0].unitPrice, isPanelTest ? 100 : expectedUnitAmount);
+      assert.equal(body.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0), body.amount);
       assert.equal(body.customer.document.type, 'cpf');
       if (isPanelTest) { assert.equal(body.items[0].tangible, false); assert.equal(body.shipping, undefined); }
       else {
@@ -117,7 +120,11 @@ test('Blackcat payment lifecycle with mocked provider and storage', async t => {
       const first = await invoke(store, 'POST', body, { 'x-order-token': token });
       assert.equal(first.statusCode, 201);
       order = first.data.order;
-      assert.equal(order.amount, 25.9);
+      assert.equal(order.amount, 23.31);
+      assert.equal(order.subtotal, 25.9);
+      assert.equal(order.discountAmount, 2.59);
+      assert.equal(order.items[0].originalUnitPrice, 25.9);
+      assert.equal(order.items[0].unitPrice, 23.31);
       assert.equal(order.payment.copyPaste, '000201-test-pix');
       assert.equal(order.paymentTokenHash, undefined);
       assert.ok(!db.get(p.ORDERS_KEY).includes(body.document));
@@ -133,7 +140,7 @@ test('Blackcat payment lifecycle with mocked provider and storage', async t => {
       remoteStatus = 'PAID'; remoteAmount = 1;
       assert.equal((await invoke(webhook, 'POST', notify)).statusCode, 503);
       assert.equal(JSON.parse(db.get(p.ORDERS_KEY))[0].status, 'pending');
-      remoteAmount = 2590;
+      remoteAmount = 2331;
       assert.equal((await invoke(webhook, 'POST', notify)).statusCode, 200);
       assert.equal(JSON.parse(db.get(p.ORDERS_KEY))[0].status, 'paid');
     });
@@ -168,8 +175,32 @@ test('Blackcat payment lifecycle with mocked provider and storage', async t => {
       const result = await invoke(store, 'POST', { ...body, document: '' }, { 'x-order-token': crypto.randomUUID() });
       assert.equal(result.statusCode, 201);
       assert.equal(result.data.order.gateway, 'manual');
+      assert.equal(result.data.order.amount, 23.31);
       assert.equal(creates, before);
       process.env.BLACKCAT_API_KEY = 'test-server-secret';
+    });
+    await t.test('discount rounds each unit identically in browser and server, including multiple quantities', async () => {
+      assert.equal(pricing.pixPrice(100), 90);
+      assert.equal(pricing.pixPrice(25.9), 23.31);
+      assert.equal(pricing.pixPrice(19.99), 17.99);
+      assert.equal(pricing.pixPrice(0.05), 0.05);
+      const browser = { window: {} };
+      vm.runInNewContext(fs.readFileSync(require.resolve('../pricing'), 'utf8'), browser);
+      for (const price of [0.01, 0.05, 19.99, 25.9, 100, 599.99]) {
+        assert.equal(browser.window.StorePricing.pixCents(price), pricing.pixCents(price));
+      }
+      seed(); timeout = false;
+      db.set('walkcards:products', JSON.stringify([{ id: 'p1', name: 'Cartas', price: 19.99, stockVerified: true, stock: 4 }]));
+      expectedSaleAmount = 5397; expectedUnitAmount = 1799;
+      const result = await invoke(store, 'POST', { ...body, discountPercent: 99,
+        items: [{ productId: 'p1', quantity: 3, unitPrice: 0.01 }] }, { 'x-order-token': crypto.randomUUID() });
+      assert.equal(result.statusCode, 201);
+      assert.equal(result.data.order.amount, 53.97);
+      assert.equal(result.data.order.subtotal, 59.97);
+      assert.equal(result.data.order.discountPercent, 10);
+      assert.equal(result.data.order.discountAmount, 6);
+      assert.equal(JSON.parse(db.get('walkcards:products'))[0].stock, 1);
+      expectedSaleAmount = expectedUnitAmount = 2331;
     });
     const qrRequest = { action: 'test-qr', requestId: crypto.randomUUID(), amount: 100,
       name: body.customer, email: body.email, phone: body.phone, document: body.document };

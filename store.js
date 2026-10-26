@@ -12,6 +12,7 @@
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
   })[character]);
   const money = (value) => currency.format(Number(value) || 0);
+  const pixPrice = (product) => window.StorePricing.pixPrice(product.price);
   const whatsappNumber = "5511993983387";
   function verifiedStock(product) {
     return product.stockVerified === true && Number.isInteger(product.stock);
@@ -68,7 +69,8 @@
       ["Produto", product.name],
       ["Categoria", productCategory(product.name)],
       ["Marca", product.brand || "Confira a embalagem do produto"],
-      ["Preço de referência (confirmar)", money(product.price)],
+      ["Preço original", money(product.price)],
+      ["Preço no Pix (10% de desconto)", money(pixPrice(product))],
       ["Disponibilidade", verifiedStock(product) ? (product.stock > 0 ? `${product.stock} unidades em estoque` : "Indisponível") : "Consulte a loja"]
     ];
     const optionalSpecs = [
@@ -246,7 +248,11 @@
   }
 
   function cartTotal() {
-    return cart.reduce((sum, item) => sum + (getProduct(item.productId)?.price || 0) * item.quantity, 0);
+    return cart.reduce((sum, item) => sum + window.StorePricing.pixCents(getProduct(item.productId)?.price || 0) * item.quantity, 0) / 100;
+  }
+
+  function cartOriginalTotal() {
+    return cart.reduce((sum, item) => sum + window.StorePricing.cents(getProduct(item.productId)?.price || 0) * item.quantity, 0) / 100;
   }
 
   function shippingTotal() {
@@ -269,9 +275,10 @@
       const image = product.image
         ? `<img src="${escapeHtml(product.image)}" alt="" loading="lazy">`
         : '<span class="checkout-order-placeholder" aria-hidden="true">TCG</span>';
-      return `<div class="checkout-order-line">${image}<span class="checkout-order-line-name">${escapeHtml(product.name)} × ${item.quantity}</span><strong>${money(product.price * item.quantity)}</strong></div>`;
+      return `<div class="checkout-order-line">${image}<span class="checkout-order-line-name">${escapeHtml(product.name)} × ${item.quantity}</span><strong>${money(pixPrice(product) * item.quantity)} no Pix</strong></div>`;
     }).join("");
-    $("#delivery-subtotal").textContent = money(cartTotal());
+    $("#delivery-subtotal").textContent = money(cartOriginalTotal());
+    $("#delivery-pix-discount").textContent = `− ${money(cartOriginalTotal() - cartTotal())}`;
     $("#delivery-method-price").textContent = "A confirmar";
     $("#delivery-shipping").textContent = $("#delivery-method-price").textContent;
     $("#delivery-total").textContent = money(cartTotal());
@@ -305,10 +312,11 @@
       <div class="store-product-info">
         <button class="store-product-title" type="button" data-product-details="${escapeHtml(product.id)}">${escapeHtml(product.name)}</button>
         <div class="store-product-rating" aria-label="Avaliações ainda não cadastradas"><span aria-hidden="true">☆☆☆☆☆</span></div>
-        <strong class="store-product-price">${money(product.price)}</strong>
-        <small class="store-price-note">Preço de referência</small>
+        <small class="store-price-note">De <s>${money(product.price)}</s></small>
+        <strong class="store-product-price">${money(pixPrice(product))}</strong>
+        <small class="store-price-note">no Pix</small>
         ${verifiedStock(product) ? `<span class="store-stock">${soldOut ? "Produto indisponível" : `${product.stock} unidades em estoque`}</span>` : ""}
-        <span class="pix-payment-label">DESCONTO NO PIX</span>
+        <span class="pix-payment-label">10% DE DESCONTO NO PIX</span>
         <button class="add-to-cart" type="button" data-add-product="${escapeHtml(product.id)}" ${soldOut ? "disabled" : ""}><span aria-hidden="true">⊕</span>${soldOut ? "ESGOTADO" : "ADICIONAR"}</button>
       </div>
     </article>`;
@@ -375,7 +383,7 @@
 
   function renderProducts() {
     const query = $("#catalog-search").value.trim().toLocaleLowerCase("pt-BR");
-    const catalogPrices = products.map((product) => Number(product.price)).filter(Number.isFinite);
+    const catalogPrices = products.map(pixPrice).filter(Number.isFinite);
     const priceFloor = catalogPrices.length ? Math.min(...catalogPrices) : 0;
     const priceCeiling = catalogPrices.length ? Math.max(...catalogPrices) : 0;
     if (minimumPrice === null) minimumPrice = priceFloor;
@@ -395,7 +403,7 @@
     const filtered = products.filter((product) => (!showFavoritesOnly || favorites.includes(product.id))
       && (!catalogFilters.bestSellers || product.bestSeller === true)
       && product.name.toLocaleLowerCase("pt-BR").includes(query)
-      && Number(product.price) >= minimumPrice && Number(product.price) <= maximumPrice);
+      && pixPrice(product) >= minimumPrice && pixPrice(product) <= maximumPrice);
     $("#favorites-count").textContent = String(favorites.length);
     $("#detail-favorites-count").textContent = String(favorites.length);
     $("#show-favorites").classList.toggle("is-active", showFavoritesOnly);
@@ -453,7 +461,7 @@
     favoriteButton.setAttribute("aria-label", isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos");
     favoriteButton.setAttribute("aria-pressed", String(isFavorite));
     favoriteButton.textContent = isFavorite ? "♥" : "♡";
-    $("#product-detail-price").textContent = money(product.price);
+    $("#product-detail-price").innerHTML = `<small class="product-original-price">De <s>${money(product.price)}</s></small>${money(pixPrice(product))} <small>no Pix</small>`;
     $("#product-detail-stock").textContent = soldOut ? "Produto indisponível no momento." : verifiedStock(product) ? `${product.stock} unidades em estoque.` : "";
     $("#product-detail-stock").classList.toggle("hidden", !verifiedStock(product));
     $("#product-detail-description").textContent = describeProduct(product);
@@ -529,13 +537,13 @@
       return `<div class="cart-line">
         <div class="cart-product-cell"><img src="${escapeHtml(product.image)}" alt="" loading="lazy"><div class="cart-line-info"><div class="cart-line-title" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</div><small>Walk Cards</small></div></div>
         <span class="cart-delivery-estimate">Prazo a confirmar</span>
-        <strong class="cart-unit-price">${money(product.price)}</strong>
+        <strong class="cart-unit-price">${money(pixPrice(product))} no Pix</strong>
         <div class="cart-line-controls">
           <button class="cart-quantity-button" type="button" data-cart-step="-1" data-cart-product="${escapeHtml(product.id)}" aria-label="Diminuir quantidade de ${escapeHtml(product.name)}" ${item.quantity <= 1 ? "disabled" : ""}>−</button>
           <span class="cart-line-qty" aria-label="Quantidade: ${item.quantity}">${item.quantity}</span>
           <button class="cart-quantity-button" type="button" data-cart-step="1" data-cart-product="${escapeHtml(product.id)}" aria-label="Aumentar quantidade de ${escapeHtml(product.name)}" ${verifiedStock(product) && item.quantity >= product.stock ? "disabled" : ""}>+</button>
         </div>
-        <strong class="cart-line-price">${money(product.price * item.quantity)}</strong>
+        <strong class="cart-line-price">${money(pixPrice(product) * item.quantity)}</strong>
         <button class="remove-cart-item" type="button" data-remove-product="${escapeHtml(product.id)}" aria-label="Remover ${escapeHtml(product.name)}">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-.8 13H6.8L6 7m4 3v6m4-6v6"/></svg>
         </button>
@@ -554,7 +562,7 @@
           <span>${item.quantity}</span>
           <button type="button" data-cart-step="1" data-cart-product="${escapeHtml(product.id)}" aria-label="Aumentar quantidade de ${escapeHtml(product.name)}" ${verifiedStock(product) && item.quantity >= product.stock ? "disabled" : ""}>+</button>
         </div></div>
-        <div class="mini-cart-line-price"><strong>${money(product.price * item.quantity)}</strong></div>
+        <div class="mini-cart-line-price"><strong>${money(pixPrice(product) * item.quantity)}</strong></div>
       </article>`;
     }).join("");
     $("#cart-empty").classList.toggle("hidden", cart.length > 0);
@@ -562,10 +570,11 @@
     $("#mini-cart-lines").classList.toggle("hidden", cart.length === 0);
     $("#view-full-cart").disabled = cart.length === 0;
     const subtotal = cartTotal();
-    $("#cart-subtotal").textContent = money(subtotal);
+    $("#cart-subtotal").textContent = money(cartOriginalTotal());
+    for (const id of ['cart-pix-discount', 'mini-cart-pix-discount']) $(`#${id}`).textContent = `− ${money(cartOriginalTotal() - subtotal)}`;
     $("#cart-shipping").textContent = "A combinar";
     $("#cart-delivery-price").textContent = "A combinar";
-    $("#mini-cart-subtotal").textContent = money(subtotal);
+    $("#mini-cart-subtotal").textContent = money(cartOriginalTotal());
     $("#mini-cart-shipping").textContent = "A combinar";
     $("#mini-cart-total").textContent = money(subtotal);
     $("#cart-total").textContent = money(subtotal);
