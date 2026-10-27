@@ -1,0 +1,18 @@
+.pix-welcome { box-sizing: border-box; width: min(460px, calc(100% - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; margin: auto; padding: 24px 32px 22px; border: 1px solid #e6e0f7; border-radius: 22px; background: radial-gradient(ellipse at 50% 15%, #f1eaff 0, #fff 62%); color: #25223c; text-align: center; box-shadow: 0 28px 100px #17142b40; font-family: "Poppins", Arial, sans-serif; }
+.pix-welcome::backdrop { background: #17142bb3; backdrop-filter: blur(6px); }
+body.pix-welcome-open { overflow: hidden; }
+.pix-welcome-close { position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; border: 0; background: transparent; color: #79778c; font-size: 28px; }
+.pix-welcome-logo { display: flex; justify-content: center; margin-bottom: 14px; }
+.pix-welcome-logo img { width: 156px; height: 72px; object-fit: cover; mix-blend-mode: multiply; }
+.pix-welcome-kicker { margin: 0 0 12px; color: #7356d8; font-size: 10px; font-weight: 700; letter-spacing: .16em; }
+.pix-welcome h2 { margin: 0; font-family: "Montserrat", Arial, sans-serif; font-size: 26px; font-weight: 700; line-height: 1.2; }
+.pix-welcome h2 > span { display: block; color: #6343cb; font-size: clamp(88px, 25vw, 120px); font-weight: 800; letter-spacing: -.07em; line-height: 1.1; }
+.pix-welcome-percent { color: #ad7410; }
+.pix-welcome-subtitle { margin: 22px 0 10px; font-size: 16px; font-weight: 600; }
+#pix-welcome-description { margin: 0 0 24px; color: #79778c; font-size: 13px; line-height: 1.7; }
+.pix-welcome-action { display: flex; width: 100%; min-height: 52px; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 18px; border: 0; border-radius: 10px; background: #7356d8; color: #fff; font-size: 14px; font-weight: 700; }
+.pix-welcome-action:hover { background: #5e43c4; }
+.pix-welcome-later { min-height: 44px; margin-top: 6px; padding: 8px 12px; border: 0; background: transparent; color: #79778c; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.pix-welcome-footnote { margin: 12px 0 0; color: #79778c; font-size: 10px; line-height: 1.6; }
+.pix-welcome :focus-visible { outline: 3px solid #ad7410; outline-offset: 4px; }
+@media (max-width: 420px) { .pix-welcome { padding: 22px 22px 18px; } .pix-welcome-subtitle { font-size: 14px; } }

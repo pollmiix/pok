@@ -27,6 +27,8 @@
   <script src="./pix-qr.js" defer></script>
   <script src="./pricing.js" defer></script>
   <script src="./store.js?v=pix10" defer></script>
+  <link rel="stylesheet" href="./pix-welcome.css?v=1">
+  <script src="./pix-welcome.js?v=1" defer></script>
 </head>
 <body>
   <svg class="image-filters" aria-hidden="true" focusable="false">
@@ -183,7 +185,7 @@
   </footer>
 
   <dialog class="product-detail-dialog" id="product-detail-dialog" aria-labelledby="product-detail-title">
-    <aside class="pix-announcement product-detail-announcement" aria-label="Promo??o no Pix">
+    <aside class="pix-announcement product-detail-announcement" aria-label="Promo&ccedil;&atilde;o no Pix">
       <span class="pix-announcement-badge">10% OFF</span>
       <div><p>Todos os produtos com <strong>10% de desconto no Pix!</strong></p></div>
     </aside>
@@ -409,6 +411,18 @@
     <p>Use sua conta Google para entrar.</p>
     <div class="google-signin-button" id="google-signin-button"></div>
     <p class="account-status" id="account-status" role="status"></p>
+  </dialog>
+
+  <dialog class="pix-welcome" id="pix-welcome" aria-labelledby="pix-welcome-title" aria-describedby="pix-welcome-description">
+    <button class="pix-welcome-close" type="button" data-close-pix-welcome aria-label="Fechar oferta">&times;</button>
+    <div class="pix-welcome-logo"><img src="./assets/walk-cards-logo-footer.jpg" alt="Walk Cards" width="156" height="72"></div>
+    <p class="pix-welcome-kicker">SUA PR&Oacute;XIMA COLE&Ccedil;&Atilde;O COME&Ccedil;A AQUI</p>
+    <h2 id="pix-welcome-title"><span>10<span class="pix-welcome-percent">%</span></span> de desconto</h2>
+    <p class="pix-welcome-subtitle">Em toda a loja, pagando no Pix.</p>
+    <p id="pix-welcome-description">Encontre suas cartas e colecion&aacute;veis favoritos. O desconto j&aacute; est&aacute; inclu&iacute;do nos pre&ccedil;os no Pix dos produtos.</p>
+    <button class="pix-welcome-action" type="button" id="pix-welcome-explore" autofocus>Explorar a cole&ccedil;&atilde;o <span aria-hidden="true">&rarr;</span></button>
+    <button class="pix-welcome-later" type="button" data-close-pix-welcome>Continuar navegando</button>
+    <p class="pix-welcome-footnote">V&aacute;lido para pagamento via Pix. Sem precisar de cupom.</p>
   </dialog>
 
   <div class="store-toast" id="store-toast" role="status" aria-live="polite"></div>
