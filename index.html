@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./store.css?v=pix-banner-sticky">
+  <link rel="stylesheet" href="./store.css?v=pix-product-banner">
   <script src="./catalog.js" defer></script>
   <script src="./catalog-galleries.js" defer></script>
   <script src="./google-auth-config.js" defer></script>
@@ -183,6 +183,10 @@
   </footer>
 
   <dialog class="product-detail-dialog" id="product-detail-dialog" aria-labelledby="product-detail-title">
+    <aside class="pix-announcement product-detail-announcement" aria-label="Promo??o no Pix">
+      <span class="pix-announcement-badge">10% OFF</span>
+      <div><p>Todos os produtos com <strong>10% de desconto no Pix!</strong></p></div>
+    </aside>
     <header class="store-header product-detail-store-header">
       <a class="store-brand" href="./index.html" aria-label="Walk Cards, início"><img class="store-brand-logo" src="./assets/walk-cards-logo-footer.jpg" alt="Walk Cards"></a>
       <label class="store-search"><span aria-hidden="true">⌕</span><input id="detail-store-search" type="search" placeholder="Buscar carta, coleção ou produto..." aria-label="Buscar produto"></label>

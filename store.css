@@ -717,3 +717,9 @@ button { cursor: pointer; }
   .pix-announcement-badge { padding: 3px 5px; font-size: 11px; }
   .pix-announcement p { font-size: 11px; }
 }
+
+/* Repeat the offer in the product dialog's top layer. */
+.product-detail-announcement { position: fixed; inset: 0 0 auto; z-index: 4; height: 36px; box-sizing: border-box; }
+.product-detail-store-header { top: 36px; }
+.product-detail-close { transform: translateY(36px); }
+.product-detail-layout { padding-top: 96px; }
