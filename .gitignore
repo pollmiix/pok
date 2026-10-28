@@ -6,6 +6,7 @@
 /checkout-logo-white-preview.png
 /mobile-preview.png
 /product-detail-preview.png
+/.automation/
 
 # Keep the product images used by the catalog, but leave the downloaded source-site files out.
 /Cartas*Ri Happy_files/*.download
