@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const payments = require('./_lib/payments');
 const pricing = require('../pricing');
+const { normalizeInventory } = require('./_lib/catalog');
 
 const AUTH_COOKIE = 'walkcards_admin';
 const CSRF_COOKIE = 'walkcards_csrf';
@@ -108,8 +109,9 @@ async function createOrder(req, res) {
     return sendJson(res, 400, { error: 'O carrinho está inválido. Atualize a página e tente novamente.' });
   }
 
-  const products = await readArray(PRODUCTS_KEY);
+  let products = await readArray(PRODUCTS_KEY);
   if (!products) return sendJson(res, 503, { error: 'O catálogo compartilhado ainda está sendo configurado. Tente novamente mais tarde.' });
+  products = normalizeInventory(products, await redisCommand(['GET', INVENTORY_PRESET_KEY]));
   const gateway = await payments.settings();
   const orderToken = req.headers['x-order-token'];
   if (gateway.enabled && (typeof orderToken !== 'string' || !/^[a-f0-9-]{32,64}$/i.test(orderToken))) {
@@ -137,6 +139,7 @@ async function createOrder(req, res) {
     if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 30) {
       return sendJson(res, 400, { error: 'Um produto do carrinho não está mais disponível. Atualize o carrinho.' });
     }
+    if (!product.stockVerified) return sendJson(res, 409, { error: 'Confirme a disponibilidade deste produto com a loja antes de comprar.' });
     if (product.stockVerified === true && Number.isInteger(product.stock)) {
       if (quantity > product.stock) return sendJson(res, 409, { error: `Estoque insuficiente para ${product.name}.` });
       product.stock -= quantity;
@@ -199,8 +202,9 @@ module.exports = async function handler(req, res) {
       if (!lease) return sendJson(res, 409, { error: 'A loja está atualizando um pedido. Aguarde alguns segundos e tente novamente.' });
     }
     if (req.method === 'GET') {
-      const products = await readArray(PRODUCTS_KEY);
+      const rawProducts = await readArray(PRODUCTS_KEY);
       const inventoryPreset = await redisCommand(['GET', INVENTORY_PRESET_KEY]);
+      const products = rawProducts ? normalizeInventory(rawProducts, inventoryPreset) : null;
       if (!authenticated(req)) return sendJson(res, 200, { products, inventoryPreset });
       const sales = await readArray(ORDERS_KEY);
       return sendJson(res, 200, { products, sales: (sales || []).filter(order => !order.archivedAt),
@@ -215,7 +219,6 @@ module.exports = async function handler(req, res) {
       const body = req.body && typeof req.body === 'object' ? req.body : {};
       if (!Array.isArray(body.products) || body.products.length > 2000) return sendJson(res, 400, { error: 'O catálogo enviado é inválido.' });
       await redisCommand(['SET', PRODUCTS_KEY, JSON.stringify(body.products)]);
-      if (body.inventoryPreset === '23-units-each') await redisCommand(['SET', INVENTORY_PRESET_KEY, '23-units-each']);
       if (Array.isArray(body.sales)) {
         const currentSales = await readArray(ORDERS_KEY);
         if (currentSales === null && body.sales.length) await redisCommand(['SET', ORDERS_KEY, JSON.stringify(body.sales.slice(-5000))]);

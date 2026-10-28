@@ -101,6 +101,7 @@ test('Blackcat payment lifecycle with mocked provider and storage', async t => {
       const result = await invoke(adminPage, 'GET', null, adminHeaders);
       assert.ok(result.raw.includes('data-view="gateway"'));
       assert.ok(result.raw.includes('id="gateway-settings-form"'));
+      assert.ok(result.raw.includes('id="clear-orders-button"'));
       const loggedOut = await invoke(adminPage, 'GET');
       assert.ok(!loggedOut.raw.includes('id="gateway-settings-form"'));
     });
@@ -115,6 +116,21 @@ test('Blackcat payment lifecycle with mocked provider and storage', async t => {
       assert.equal((await invoke(store, 'POST', body, { 'x-order-token': token })).statusCode, 503);
       assert.equal(db.has(p.ORDERS_KEY), false);
       process.env.BLACKCAT_API_KEY = 'test-server-secret';
+    });
+    await t.test('unverified and legacy automatic stock cannot create charges or reserve inventory', async () => {
+      seed();
+      db.set('walkcards:inventory-preset', '23-units-each');
+      const productsBefore = db.get('walkcards:products');
+      const before = creates;
+      assert.equal((await invoke(store, 'POST', body, { 'x-order-token': crypto.randomUUID() })).statusCode, 409);
+      assert.equal(creates, before);
+      assert.equal(db.has(p.ORDERS_KEY), false);
+      assert.equal(db.get('walkcards:products'), productsBefore);
+      assert.equal((await invoke(store, 'GET')).data.products[0].stockVerified, false);
+      const confirmed = JSON.parse(productsBefore);
+      confirmed[0].stockConfirmedAt = new Date().toISOString();
+      db.set('walkcards:products', JSON.stringify(confirmed));
+      assert.equal((await invoke(store, 'GET')).data.products[0].stockVerified, true);
     });
     let order;
     await t.test('server prices override client prices; repeated requests create one charge', async () => {

@@ -85,8 +85,6 @@
     return specs;
   }
 
-  // Produtos do catálogo local que correspondem aos itens destacados na página Pokémon da Ri Happy.
-  const riHappyBestSellerIds = new Set(Array.from({ length: 19 }, (_, index) => `imported-${index + 1}`));
   const importedProducts = (Array.isArray(window.STORE_CATALOG) ? window.STORE_CATALOG : []).map((product, index) => {
     const id = `imported-${index + 1}`;
     const gallery = window.STORE_PRODUCT_GALLERIES?.[id];
@@ -97,9 +95,8 @@
       price: Number(product.price),
       image: product.image || "",
       images: Array.isArray(gallery) ? gallery.filter((image) => typeof image === "string" && image) : [],
-      stockVerified: true,
-      stock: 23,
-      bestSeller: riHappyBestSellerIds.has(id)
+      stockVerified: false,
+      bestSeller: false
     };
   });
 
@@ -133,41 +130,6 @@
 
   function readLocalData() {
     try {
-      const storedDashboard = localStorage.getItem(dashboardStorageKey);
-      if (storedDashboard) {
-        const parsed = JSON.parse(storedDashboard);
-        if (parsed && Array.isArray(parsed.products) && Array.isArray(parsed.sales)) {
-          const savedProducts = parsed.products.map((product) => {
-            const match = /^imported-(\d+)$/.exec(product.id);
-            const catalogProduct = match ? importedProducts[Number(match[1]) - 1] : null;
-            const normalizedProduct = {
-              ...product,
-              name: catalogProduct?.name || product.name,
-              image: catalogProduct?.image || product.image,
-              bestSeller: typeof product.bestSeller === "boolean" ? product.bestSeller : catalogProduct?.bestSeller === true,
-              ...(match ? { stockVerified: product.stockVerified === true && Number.isInteger(product.stock) } : {}),
-              images: catalogProduct?.images.length
-                ? catalogProduct.images
-                : (Array.isArray(product.images) && product.images.length
-                  ? product.images
-                  : (product.image ? [product.image] : []))
-            };
-            if (match && !normalizedProduct.stockVerified) delete normalizedProduct.stock;
-            return normalizedProduct;
-          });
-          const savedProductIds = new Set(savedProducts.map((product) => product.id));
-          const newCatalogProducts = importedProducts.filter((product) => !savedProductIds.has(product.id));
-          dashboardState = {
-            products: [...savedProducts, ...newCatalogProducts],
-            sales: parsed.sales.filter((sale) => sale.source === "store-checkout")
-          };
-          products = dashboardState.products;
-          if (dashboardState.products.length !== parsed.products.length
-            || dashboardState.products.some((product, index) => product !== parsed.products[index])) {
-            localStorage.setItem(dashboardStorageKey, JSON.stringify(dashboardState));
-          }
-        }
-      }
       const storedPix = localStorage.getItem(pixStorageKey);
       if (storedPix) {
         const parsedPix = JSON.parse(storedPix);
@@ -207,16 +169,11 @@
       if (!Array.isArray(shared.products)) return;
       const sharedProducts = shared.products.map((product) => {
         const source = importedProducts.find((entry) => entry.id === product.id);
-        const merged = source ? { ...source, ...product, name: source.name, image: source.image, images: source.images } : product;
-        return shared.inventoryPreset === "23-units-each"
-          ? merged
-          : { ...merged, stock: 23, stockVerified: true };
+        return source ? { ...source, ...product, images: product.images?.length ? product.images : source.images } : product;
       });
       const sharedProductIds = new Set(sharedProducts.map((product) => product.id));
       const newCatalogProducts = importedProducts.filter((product) => !sharedProductIds.has(product.id));
-      products = [...sharedProducts, ...newCatalogProducts].map((product) => shared.inventoryPreset === "23-units-each"
-        ? product
-        : { ...product, stock: 23, stockVerified: true });
+      products = [...sharedProducts, ...newCatalogProducts];
       dashboardState.products = products;
       cart = cart.filter((item) => products.some((product) => product.id === item.productId));
       localStorage.setItem(cartStorageKey, JSON.stringify(cart));
@@ -288,10 +245,10 @@
     const image = product.image
       ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" loading="lazy">`
       : '<span class="store-placeholder" aria-hidden="true">TCG</span>';
-    const soldOut = verifiedStock(product) && product.stock < 1;
+    const soldOut = !verifiedStock(product) || product.stock < 1;
     const isFavorite = favorites.includes(product.id);
-    const stockTag = soldOut ? "INDISPONÍVEL" : verifiedStock(product) ? `${product.stock} EM ESTOQUE` : "CONSULTE ESTOQUE";
-    const primaryTag = soldOut && (isLaunch || isBestSeller)
+    const stockTag = !verifiedStock(product) ? "CONSULTE ESTOQUE" : soldOut ? "INDISPONÍVEL" : `${product.stock} EM ESTOQUE`;
+    const primaryTag = !verifiedStock(product) ? "CONSULTE ESTOQUE" : soldOut && (isLaunch || isBestSeller)
       ? "ESGOTADO"
       : isLaunch
         ? "SELEÇÃO DA LOJA"
@@ -301,8 +258,8 @@
             ? "INDISPONÍVEL"
             : "POKÉMON TCG";
     const productTags = isToy || isBlock || isGiftCard
-      ? (product.bestSeller === true ? '<div class="product-tags"><span class="product-tag">MAIS VENDIDO!</span></div>' : "")
-      : `<div class="product-tags">${product.bestSeller === true ? '<span class="product-tag">MAIS VENDIDO!</span>' : ""}<span class="product-tag">${primaryTag}</span>${isLaunch ? "" : `<span class="product-tag stock-tag">${stockTag}</span>`}</div>`;
+      ? (product.bestSeller === true ? '<div class="product-tags"><span class="product-tag">DESTAQUE</span></div>' : "")
+      : `<div class="product-tags">${product.bestSeller === true ? '<span class="product-tag">DESTAQUE</span>' : ""}<span class="product-tag">${primaryTag}</span>${isLaunch ? "" : `<span class="product-tag stock-tag">${stockTag}</span>`}</div>`;
     return `<article class="store-product${isLaunch ? " launch-product" : ""}${isBestSeller ? " best-seller-product" : ""}${isToy ? " toy-product" : ""}${isBlock ? " block-product" : ""}${isGiftCard ? " gift-card-product" : ""}">
       <div class="store-product-image">
         ${productTags}
@@ -310,14 +267,13 @@
         <button class="product-detail-trigger" type="button" data-product-details="${escapeHtml(product.id)}" aria-label="Ver detalhes de ${escapeHtml(product.name)}">${image}</button>
       </div>
       <div class="store-product-info">
-        <button class="store-product-title" type="button" data-product-details="${escapeHtml(product.id)}">${escapeHtml(product.name)}</button>
-        <div class="store-product-rating" aria-label="Avaliações ainda não cadastradas"><span aria-hidden="true">☆☆☆☆☆</span></div>
-        <small class="store-price-note">De <s>${money(product.price)}</s></small>
+        <a class="store-product-title" href="/produto/${encodeURIComponent(product.id)}">${escapeHtml(product.name)}</a>
+        <small class="store-price-note">Preço base: ${money(product.price)}</small>
         <strong class="store-product-price">${money(pixPrice(product))}</strong>
         <small class="store-price-note">no Pix</small>
         ${verifiedStock(product) ? `<span class="store-stock">${soldOut ? "Produto indisponível" : `${product.stock} unidades em estoque`}</span>` : ""}
         <span class="pix-payment-label">10% DE DESCONTO NO PIX</span>
-        <button class="add-to-cart" type="button" data-add-product="${escapeHtml(product.id)}" ${soldOut ? "disabled" : ""}><span aria-hidden="true">⊕</span>${soldOut ? "ESGOTADO" : "ADICIONAR"}</button>
+        <button class="add-to-cart" type="button" data-add-product="${escapeHtml(product.id)}" ${soldOut ? "disabled" : ""}><span aria-hidden="true">⊕</span>${!verifiedStock(product) ? "CONSULTE ESTOQUE" : soldOut ? "ESGOTADO" : "ADICIONAR"}</button>
       </div>
     </article>`;
   }
@@ -426,7 +382,7 @@
     const shown = filtered.slice(0, visibleCount);
     $("#catalog-total").textContent = `${new Intl.NumberFormat("pt-BR").format(filtered.length)} ${filtered.length === 1 ? "produto" : "produtos"}`;
     $("#no-products").textContent = catalogFilters.bestSellers
-      ? "Nenhum produto marcado como Mais Vendido corresponde aos filtros atuais."
+      ? "Nenhum produto marcado como Destaque corresponde aos filtros atuais."
       : "Não encontramos produtos com essa busca.";
     $("#no-products").classList.toggle("hidden", filtered.length > 0);
     $("#load-more").classList.toggle("hidden", filtered.length <= shown.length);
@@ -452,7 +408,7 @@
   }
 
   function renderProductDetails(product) {
-    const soldOut = verifiedStock(product) && product.stock < 1;
+    const soldOut = !verifiedStock(product) || product.stock < 1;
     renderProductGallery(product);
     $("#product-detail-title").textContent = product.name;
     const favoriteButton = $("#product-detail-favorite");
@@ -461,9 +417,9 @@
     favoriteButton.setAttribute("aria-label", isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos");
     favoriteButton.setAttribute("aria-pressed", String(isFavorite));
     favoriteButton.textContent = isFavorite ? "♥" : "♡";
-    $("#product-detail-price").innerHTML = `<small class="product-original-price">De <s>${money(product.price)}</s></small>${money(pixPrice(product))} <small>no Pix</small>`;
-    $("#product-detail-stock").textContent = soldOut ? "Produto indisponível no momento." : verifiedStock(product) ? `${product.stock} unidades em estoque.` : "";
-    $("#product-detail-stock").classList.toggle("hidden", !verifiedStock(product));
+    $("#product-detail-price").innerHTML = `<small class="product-original-price">Preço base: ${money(product.price)}</small>${money(pixPrice(product))} <small>no Pix</small>`;
+    $("#product-detail-stock").textContent = !verifiedStock(product) ? "Consulte a disponibilidade com a loja." : soldOut ? "Produto indisponível no momento." : `${product.stock} unidades em estoque.`;
+    $("#product-detail-stock").classList.remove("hidden");
     $("#product-detail-description").textContent = describeProduct(product);
     $("#product-detail-specifications").innerHTML = productSpecifications(product)
       .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`)
@@ -572,20 +528,24 @@
     const subtotal = cartTotal();
     $("#cart-subtotal").textContent = money(cartOriginalTotal());
     for (const id of ['cart-pix-discount', 'mini-cart-pix-discount']) $(`#${id}`).textContent = `− ${money(cartOriginalTotal() - subtotal)}`;
-    $("#cart-shipping").textContent = "A combinar";
-    $("#cart-delivery-price").textContent = "A combinar";
+    $("#cart-shipping").textContent = "Grátis";
+    $("#cart-delivery-price").textContent = "Grátis";
     $("#mini-cart-subtotal").textContent = money(cartOriginalTotal());
-    $("#mini-cart-shipping").textContent = "A combinar";
+    $("#mini-cart-shipping").textContent = "Grátis";
     $("#mini-cart-total").textContent = money(subtotal);
     $("#cart-total").textContent = money(subtotal);
     $("#continue-checkout").disabled = cart.length === 0;
-    $("#mini-shipping-message").textContent = "Você ganhou Frete Grátis na entrega Econômica!";
+    $("#mini-shipping-message").textContent = "Frete grátis para todo o Brasil. Consulte o prazo antes de pagar.";
   }
 
   function addProduct(productId) {
     const product = getProduct(productId);
     if (!product) {
       showToast("Este produto não está mais disponível no catálogo.");
+      return false;
+    }
+    if (!verifiedStock(product)) {
+      showToast("Consulte a disponibilidade deste produto com a loja.");
       return false;
     }
     const existing = cart.find((item) => item.productId === productId);
@@ -743,10 +703,10 @@
     });
     const outOfStock = cart.some((item) => {
       const product = getProduct(item.productId);
-      return Number.isInteger(product?.stock) && item.quantity > product.stock;
+      return !product || !verifiedStock(product) || item.quantity > product.stock;
     });
     if (outOfStock) {
-      showToast("Um dos produtos não tem estoque suficiente para essa quantidade. Atualize o carrinho.");
+      showToast("Confirme a disponibilidade dos itens com a loja antes de pagar.");
       return;
     }
     let amount = orderTotal();
@@ -855,45 +815,9 @@
 
   const accountDialog = $("#account-dialog");
   const accountStatus = $("#account-status");
-  let googleSignInInitialized = false;
-  function onGoogleCredential(response) {
-    if (!response?.credential) {
-      accountStatus.textContent = "Não foi possível entrar com o Google. Tente novamente.";
-      return;
-    }
-    try {
-      const tokenPayload = response.credential.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-      const profile = JSON.parse(decodeURIComponent(escape(atob(tokenPayload))));
-      accountStatus.textContent = profile.name
-        ? `Conta Google selecionada: ${profile.name}. A validação da sessão da loja ainda precisa ser configurada.`
-        : "Conta Google selecionada. A validação da sessão da loja ainda precisa ser configurada.";
-    } catch {
-      accountStatus.textContent = "Conta Google selecionada. A validação da sessão da loja ainda precisa ser configurada.";
-    }
-  }
   function startGoogleLogin() {
-    const clientId = window.POKE_CENTRAL_GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      accountStatus.textContent = "O login do Google ainda precisa ser configurado para esta loja.";
-      if (!accountDialog.open) accountDialog.showModal();
-      return;
-    }
-    if (!window.google?.accounts?.id) {
-      accountStatus.textContent = "O serviço do Google não carregou. Verifique sua conexão e tente novamente.";
-      if (!accountDialog.open) accountDialog.showModal();
-      return;
-    }
-    if (!googleSignInInitialized) {
-      window.google.accounts.id.initialize({ client_id: clientId, callback: onGoogleCredential });
-      googleSignInInitialized = true;
-    }
-    const button = $("#google-signin-button");
-    if (!button.hasChildNodes()) {
-      window.google.accounts.id.renderButton(button, { type: "standard", theme: "outline", size: "large", text: "signin_with", shape: "rectangular", width: 280 });
-    }
-    accountStatus.textContent = "";
+    accountStatus.textContent = "Você pode comprar sem criar uma conta. Para acompanhar seu pedido, fale com a loja pelo WhatsApp ou e-mail informado na página de contato.";
     if (!accountDialog.open) accountDialog.showModal();
-    window.google.accounts.id.prompt();
   }
   $("#open-account").addEventListener("click", () => {
     startGoogleLogin();
@@ -1121,7 +1045,7 @@
     showToast(code ? "Cupons de desconto ainda não foram configurados." : "Digite o código do cupom.");
   });
   $("#mini-cart-more").addEventListener("click", () => $("#mini-cart-dialog").close());
-  $("#mini-shipping-rules").addEventListener("click", () => showToast("Consulte as regras e a disponibilidade da entrega econômica com a loja."));
+  $("#mini-shipping-rules").addEventListener("click", () => showToast("Frete grátis para todo o Brasil, sem valor mínimo. Consulte o prazo de entrega para seu CEP com a loja."));
   $("#mini-coupon-apply").addEventListener("click", () => {
     const code = $("#mini-coupon-code").value.trim();
     showToast(code ? "Cupons de desconto ainda não foram configurados." : "Digite o código do cupom.");

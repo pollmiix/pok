@@ -1,2 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /admin.php
+Disallow: /api/
+Disallow: /aposta.html
+Disallow: /lotomania.html
+Disallow: /mobile-preview.html
+Sitemap: https://walkcards.online/sitemap.xml

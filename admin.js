@@ -6,17 +6,14 @@ function initializeDashboard() {
   const pixStorageKey = "poke-central-pix-settings-v1";
   const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
   const catalog = Array.isArray(window.STORE_CATALOG) ? window.STORE_CATALOG : [];
-  // Correspondências marcadas como mais vendidas na página de Pokémon da Ri Happy.
-  const riHappyBestSellerIds = new Set(Array.from({ length: 19 }, (_, index) => `imported-${index + 1}`));
   const sourceProducts = catalog.map((product, index) => ({
     ...product,
     id: `imported-${index + 1}`,
     name: product.name,
     price: product.price,
     image: product.image,
-    stockVerified: true,
-    stock: 23,
-    bestSeller: riHappyBestSellerIds.has(`imported-${index + 1}`)
+    stockVerified: false,
+    bestSeller: false
   }));
 
   const $ = (selector) => document.querySelector(selector);
@@ -248,11 +245,10 @@ function initializeDashboard() {
       const shared = await response.json();
       if (!response.ok) throw new Error(shared.error || "Não foi possível carregar os dados compartilhados.");
       if (!Array.isArray(shared.products)) {
-        state.products = state.products.map((product) => ({ ...product, stock: 23, stockVerified: true }));
         const initialize = await fetch("/api/store-data", {
           method: "PUT",
           headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken() },
-          body: JSON.stringify({ products: state.products, sales: state.sales, inventoryPreset: "23-units-each" })
+          body: JSON.stringify({ products: state.products, sales: state.sales })
         });
         const result = await initialize.json();
         if (!initialize.ok) throw new Error(result.error || "Não foi possível iniciar o catálogo compartilhado.");
@@ -262,32 +258,19 @@ function initializeDashboard() {
       const migrateLocalSales = !shared.orderHistoryInitialized && !shared.sales?.length && localSales.length > 0;
       const sharedProducts = shared.products.map((product) => {
         const base = sourceProducts.find((entry) => entry.id === product.id);
-        const refreshEtbPrice = base?.id === "imported-4" && Number(product.price) === 599.99;
-        const merged = base ? { ...base, ...product, ...(refreshEtbPrice ? { price: base.price } : {}), name: base.name, image: base.image } : product;
-        return shared.inventoryPreset === "23-units-each"
-          ? merged
-          : { ...merged, stock: 23, stockVerified: true };
+        return base ? { ...base, ...product } : product;
       });
       const sharedProductIds = new Set(sharedProducts.map((product) => product.id));
       const missingProducts = sourceProducts.filter((product) => !sharedProductIds.has(product.id));
-      const catalogNeedsSync = shared.products.some((product) => {
-        const base = sourceProducts.find((entry) => entry.id === product.id);
-        return base && (product.name !== base.name || product.image !== base.image
-          || (base.id === "imported-4" && Number(product.price) === 599.99));
-      });
-      state.products = [...sharedProducts, ...missingProducts].map((product) => shared.inventoryPreset === "23-units-each"
-        ? product
-        : { ...product, stock: 23, stockVerified: true });
+      state.products = [...sharedProducts, ...missingProducts];
       state.sales = Array.isArray(shared.sales) ? shared.sales : [];
-      const inventoryNeedsSync = shared.inventoryPreset !== "23-units-each";
-      if (missingProducts.length || catalogNeedsSync || inventoryNeedsSync || migrateLocalSales) {
+      if (missingProducts.length || migrateLocalSales) {
         const migration = await fetch("/api/store-data", {
           method: "PUT",
           headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken() },
           body: JSON.stringify({
             products: state.products,
-            sales: migrateLocalSales ? localSales : state.sales,
-            ...(inventoryNeedsSync ? { inventoryPreset: "23-units-each" } : {})
+            sales: migrateLocalSales ? localSales : state.sales
           })
         });
         if (migration.ok && migrateLocalSales) state.sales = localSales;
@@ -519,7 +502,7 @@ function initializeDashboard() {
 
     if (editingProductId) {
       const product = getProduct(editingProductId);
-      if (product) Object.assign(product, { name, price, stock: stockVerified ? stock : undefined, stockVerified, bestSeller });
+      if (product) Object.assign(product, { name, price, stock: stockVerified ? stock : undefined, stockVerified, stockConfirmedAt: stockVerified ? new Date().toISOString() : null, bestSeller });
     } else {
       state.products.unshift({
         id: `local-${Date.now()}`,
@@ -528,6 +511,7 @@ function initializeDashboard() {
         image: "",
         stock: stockVerified ? stock : undefined,
         stockVerified,
+        stockConfirmedAt: stockVerified ? new Date().toISOString() : null,
         bestSeller
       });
     }

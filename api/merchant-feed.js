@@ -1,9 +1,5 @@
-const fs = require('node:fs');
-const path = require('node:path');
-
-const PRODUCTS_KEY = 'walkcards:products';
-const SITE_URL = 'https://walkcards.online/';
-const INVENTORY_PRESET = 23;
+const { publishedCatalog, siteUrl, productUrl } = require('./_lib/catalog');
+const pricing = require('../pricing');
 
 function xml(value) {
   return String(value ?? '').replace(/[<>&"']/g, (character) => ({
@@ -11,62 +7,19 @@ function xml(value) {
   })[character]);
 }
 
-function localCatalog() {
-  const source = fs.readFileSync(path.join(process.cwd(), 'catalog.js'), 'utf8');
-  const match = source.match(/window\.STORE_CATALOG\s*=\s*(\[[\s\S]*\]);?\s*$/);
-  if (!match) throw new Error('O catálogo local não pôde ser lido.');
-  const gallerySource = fs.readFileSync(path.join(process.cwd(), 'catalog-galleries.js'), 'utf8');
-  const galleryMatch = gallerySource.match(/window\.STORE_PRODUCT_GALLERIES\s*=\s*(\{[\s\S]*\});?\s*$/);
-  if (!galleryMatch) throw new Error('As imagens do catálogo não puderam ser lidas.');
-  const galleries = JSON.parse(galleryMatch[1]);
-  return JSON.parse(match[1]).map((product, index) => ({
-    ...product,
-    id: `imported-${index + 1}`,
-    images: galleries[`imported-${index + 1}`] || []
-  }));
-}
-
-async function sharedProducts() {
-  const url = (process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '').replace(/\/+$/, '');
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '';
-  if (!url || !token) throw new Error('O Redis compartilhado não está configurado.');
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(['GET', PRODUCTS_KEY]),
-    cache: 'no-store'
-  });
-  if (!response.ok) throw new Error('Não foi possível carregar o catálogo compartilhado.');
-  const result = await response.json();
-  if (result.error) throw new Error('Não foi possível carregar o catálogo compartilhado.');
-  const parsed = result.result ? JSON.parse(result.result) : [];
-  if (!Array.isArray(parsed)) throw new Error('O catálogo compartilhado está inválido.');
-  const presetResponse = await fetch(url, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(['GET', 'walkcards:inventory-preset']),
-    cache: 'no-store'
-  });
-  if (!presetResponse.ok) throw new Error('Não foi possível ler a configuração do estoque.');
-  const presetResult = await presetResponse.json();
-  if (presetResult.error) throw new Error('Não foi possível ler a configuração do estoque.');
-  return { products: parsed, inventoryPreset: presetResult.result };
-}
-
 function productXml(product) {
   const id = String(product.id || '').trim();
   const title = String(product.name || '').trim();
-  const price = Number(product.price);
+  const price = pricing.pixPrice(product.price);
   if (!id || !title || !Number.isFinite(price) || price <= 0) return '';
   const imageSources = [...new Set([product.image, ...(Array.isArray(product.images) ? product.images : [])]
     .filter((value) => typeof value === 'string' && value.trim()))].slice(0, 11);
   const images = imageSources.map((source) => {
-    try { return new URL(source, SITE_URL).href; } catch { return ''; }
+    try { return new URL(source, siteUrl()).href; } catch { return ''; }
   }).filter(Boolean);
   if (!images.length) return '';
   const description = String(product.description || `${title}. Confira os detalhes e a disponibilidade na página do produto.`).trim();
-  const link = new URL('/', SITE_URL);
-  link.searchParams.set('produto', id);
+  const link = new URL(productUrl(id));
   return `    <item>\n`
     + `      <g:id>${xml(id)}</g:id>\n`
     + `      <g:title>${xml(title)}</g:title>\n`
@@ -77,6 +30,7 @@ function productXml(product) {
     + `      <g:availability>${product.stockVerified === true && Number.isInteger(product.stock) && product.stock > 0 ? 'in_stock' : 'out_of_stock'}</g:availability>\n`
     + `      <g:price>${price.toFixed(2)} BRL</g:price>\n`
     + `      <g:condition>new</g:condition>\n`
+    + `      <g:shipping><g:country>BR</g:country><g:price>0.00 BRL</g:price></g:shipping>\n`
     + (product.brand ? `      <g:brand>${xml(product.brand)}</g:brand>\n` : '')
     + (product.barcode || product.ean ? `      <g:gtin>${xml(product.barcode || product.ean)}</g:gtin>\n` : '')
     + `    </item>`;
@@ -84,39 +38,17 @@ function productXml(product) {
 
 module.exports = async function handler(_req, res) {
   res.setHeader('Content-Type', 'application/rss+xml; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+  res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   try {
-    const catalog = localCatalog();
-    const byId = new Map(catalog.map((product) => [product.id, product]));
-    const shared = await sharedProducts();
-    for (const product of shared.products) {
-      const local = byId.get(product.id) || {};
-      const merged = {
-        ...local,
-        ...product,
-        images: Array.isArray(product.images) && product.images.length ? product.images : local.images
-      };
-      if (shared.inventoryPreset !== '23-units-each') {
-        merged.stock = INVENTORY_PRESET;
-        merged.stockVerified = true;
-      }
-      byId.set(product.id, merged);
-    }
-    if (shared.inventoryPreset !== '23-units-each') {
-      for (const product of byId.values()) {
-        product.stock = INVENTORY_PRESET;
-        product.stockVerified = true;
-      }
-    }
-    const items = [...byId.values()].map(productXml).filter(Boolean).join('\n');
+    const items = (await publishedCatalog()).map(productXml).filter(Boolean).join('\n');
     res.statusCode = 200;
     res.end(`<?xml version="1.0" encoding="UTF-8"?>\n`
       + `<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">\n`
       + `  <channel>\n`
       + `    <title>Walk Cards</title>\n`
-      + `    <link>${xml(SITE_URL)}</link>\n`
-      + `    <description>Produtos disponíveis da loja Walk Cards</description>\n`
+      + `    <link>${xml(siteUrl())}</link>\n`
+      + `    <description>Catálogo Walk Cards. Preços em reais com desconto no Pix.</description>\n`
       + (items ? `${items}\n` : '')
       + `  </channel>\n`
       + `</rss>`);
