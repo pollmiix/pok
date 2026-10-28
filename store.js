@@ -492,7 +492,7 @@
       if (!product) return "";
       return `<div class="cart-line">
         <div class="cart-product-cell"><img src="${escapeHtml(product.image)}" alt="" loading="lazy"><div class="cart-line-info"><div class="cart-line-title" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</div><small>Walk Cards</small></div></div>
-        <span class="cart-delivery-estimate">Prazo a confirmar</span>
+        <span class="cart-delivery-estimate">Entrega: 7 a 9 dias úteis após confirmação do pagamento</span>
         <strong class="cart-unit-price">${money(pixPrice(product))} no Pix</strong>
         <div class="cart-line-controls">
           <button class="cart-quantity-button" type="button" data-cart-step="-1" data-cart-product="${escapeHtml(product.id)}" aria-label="Diminuir quantidade de ${escapeHtml(product.name)}" ${item.quantity <= 1 ? "disabled" : ""}>−</button>
@@ -535,7 +535,7 @@
     $("#mini-cart-total").textContent = money(subtotal);
     $("#cart-total").textContent = money(subtotal);
     $("#continue-checkout").disabled = cart.length === 0;
-    $("#mini-shipping-message").textContent = "Frete grátis para todo o Brasil. Consulte o prazo antes de pagar.";
+    $("#mini-shipping-message").textContent = "Frete grátis para todo o Brasil. Entrega estimada em 7 a 9 dias úteis após a confirmação do pagamento.";
   }
 
   function addProduct(productId) {
@@ -1045,7 +1045,7 @@
     showToast(code ? "Cupons de desconto ainda não foram configurados." : "Digite o código do cupom.");
   });
   $("#mini-cart-more").addEventListener("click", () => $("#mini-cart-dialog").close());
-  $("#mini-shipping-rules").addEventListener("click", () => showToast("Frete grátis para todo o Brasil, sem valor mínimo. Consulte o prazo de entrega para seu CEP com a loja."));
+  $("#mini-shipping-rules").addEventListener("click", () => showToast("Frete grátis para todo o Brasil, sem valor mínimo. Entrega estimada em 7 a 9 dias úteis após a confirmação do pagamento."));
   $("#mini-coupon-apply").addEventListener("click", () => {
     const code = $("#mini-coupon-code").value.trim();
     showToast(code ? "Cupons de desconto ainda não foram configurados." : "Digite o código do cupom.");
