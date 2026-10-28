@@ -24,7 +24,7 @@ O QR Code e o Pix copia e cola vêm da Blackcat. **Consultar pagamento** verific
 - O QR Code vem da cobrança Blackcat. Sua validade é de um dia. O frete continua combinado à parte, como no checkout existente.
 - O endpoint `/api/blackcat-webhook` recebe notificações. O servidor consulta a transação na API antes de aceitar qualquer status recebido. Confira o cadastro e a entrega das notificações no painel do provedor após publicar.
 - Enquanto a tela de pagamento estiver aberta, o site consulta a confirmação a cada 15 segundos. O painel também oferece **Consultar Blackcat** por pedido.
-- A desativação vale para novos pedidos. Cobranças existentes continuam sendo consultadas. Pedidos do gateway não permitem confirmação manual nem exclusão do histórico.
+- A desativação vale para novos pedidos. Cobranças existentes continuam sendo consultadas. Pedidos do gateway não permitem confirmação manual. Limpar os pedidos arquiva os registros e zera a lista e os totais do painel, sem cancelar cobranças nem alterar o estoque; o servidor preserva as referências para confirmação dos pagamentos.
 - Cancelamentos confirmados pela API devolvem o estoque uma vez. Estornos aparecem como **Estornado**; a reposição física deve ser conferida pela loja.
 
 ## Falhas e conferência

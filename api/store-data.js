@@ -203,7 +203,8 @@ module.exports = async function handler(req, res) {
       const inventoryPreset = await redisCommand(['GET', INVENTORY_PRESET_KEY]);
       if (!authenticated(req)) return sendJson(res, 200, { products, inventoryPreset });
       const sales = await readArray(ORDERS_KEY);
-      return sendJson(res, 200, { products, sales: sales || [], inventoryPreset });
+      return sendJson(res, 200, { products, sales: (sales || []).filter(order => !order.archivedAt),
+        orderHistoryInitialized: sales !== null, inventoryPreset });
     }
 
     if (req.method === 'POST') return await createOrder(req, res);
@@ -217,7 +218,7 @@ module.exports = async function handler(req, res) {
       if (body.inventoryPreset === '23-units-each') await redisCommand(['SET', INVENTORY_PRESET_KEY, '23-units-each']);
       if (Array.isArray(body.sales)) {
         const currentSales = await readArray(ORDERS_KEY);
-        if (!currentSales?.length && body.sales.length) await redisCommand(['SET', ORDERS_KEY, JSON.stringify(body.sales.slice(-5000))]);
+        if (currentSales === null && body.sales.length) await redisCommand(['SET', ORDERS_KEY, JSON.stringify(body.sales.slice(-5000))]);
       }
       return sendJson(res, 200, { ok: true });
     }
@@ -255,8 +256,12 @@ module.exports = async function handler(req, res) {
       if (!authenticated(req)) return sendJson(res, 401, { error: 'Entre no painel para limpar os pedidos.' });
       if (!csrfValid(req)) return sendJson(res, 403, { error: 'Sessão inválida. Atualize o painel e tente novamente.' });
       const orders = (await readArray(ORDERS_KEY)) || [];
-      if (orders.some(order => order.gateway === 'blackcat')) return sendJson(res, 409, { error: 'O histórico contém cobranças Blackcat e precisa ser preservado para conciliação.' });
-      await redisCommand(['DEL', ORDERS_KEY]);
+      const archivedAt = new Date().toISOString();
+      for (const order of orders) {
+        if (!order.archivedAt) order.archivedAt = archivedAt;
+      }
+      // Retain payment references for webhooks, retries and stock reconciliation.
+      await redisCommand(['SET', ORDERS_KEY, JSON.stringify(orders)]);
       return sendJson(res, 200, { ok: true });
     }
 

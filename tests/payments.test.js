@@ -147,12 +147,31 @@ test('Blackcat payment lifecycle with mocked provider and storage', async t => {
       assert.equal((await invoke(webhook, 'POST', notify)).statusCode, 200);
       assert.equal(JSON.parse(db.get(p.ORDERS_KEY))[0].status, 'paid');
     });
-    await t.test('buyer status needs the order token; gateway orders reject manual payment and deletion', async () => {
+    await t.test('buyer status needs the order token; clearing archives gateway orders without changing payments or stock', async () => {
       assert.equal((await invoke(status, 'POST', { id: order.id })).statusCode, 404);
       const result = await invoke(status, 'POST', { id: order.id }, { 'x-order-token': token });
       assert.equal(result.data.status, 'paid');
       assert.equal((await invoke(store, 'PATCH', { id: order.id, action: 'paid' }, adminHeaders)).statusCode, 409);
-      assert.equal((await invoke(store, 'DELETE', null, adminHeaders)).statusCode, 409);
+      const stockBefore = db.get('walkcards:products');
+      const createsBefore = creates;
+      assert.equal((await invoke(store, 'DELETE')).statusCode, 401);
+      assert.equal((await invoke(store, 'DELETE', null, { cookie: adminHeaders.cookie })).statusCode, 403);
+      assert.equal((await invoke(store, 'DELETE', null, adminHeaders)).statusCode, 200);
+      const archived = JSON.parse(db.get(p.ORDERS_KEY));
+      assert.ok(archived[0].archivedAt);
+      assert.equal(archived[0].status, 'paid');
+      assert.equal(archived[0].payment.transactionId, order.payment.transactionId);
+      assert.equal(db.get('walkcards:products'), stockBefore);
+      assert.equal(creates, createsBefore);
+      const dashboard = await invoke(store, 'GET', null, adminHeaders);
+      assert.deepEqual(dashboard.data.sales, []);
+      assert.equal(dashboard.data.orderHistoryInitialized, true);
+      const repeated = await invoke(store, 'POST', body, { 'x-order-token': token });
+      assert.equal(repeated.statusCode, 200);
+      assert.equal(creates, createsBefore);
+      assert.equal((await invoke(store, 'PUT', { products: JSON.parse(stockBefore), sales: [order] }, adminHeaders)).statusCode, 200);
+      assert.ok(JSON.parse(db.get(p.ORDERS_KEY))[0].archivedAt);
+      assert.equal((await invoke(status, 'POST', { id: order.id }, { 'x-order-token': token })).data.status, 'paid');
     });
     await t.test('cancelled payment returns inventory once, even with repeated notifications', async () => {
       const orders = JSON.parse(db.get(p.ORDERS_KEY));
@@ -161,6 +180,20 @@ test('Blackcat payment lifecycle with mocked provider and storage', async t => {
       await invoke(webhook, 'POST', { transactionId: 'TXN-test' });
       assert.equal(JSON.parse(db.get('walkcards:products'))[0].stock, 4);
       assert.equal(JSON.parse(db.get(p.ORDERS_KEY))[0].status, 'cancelled');
+      assert.deepEqual((await invoke(store, 'GET', null, adminHeaders)).data.sales, []);
+    });
+    await t.test('clearing an empty history prevents old browser imports while allowing new orders', async () => {
+      seed();
+      assert.equal((await invoke(store, 'DELETE', null, adminHeaders)).statusCode, 200);
+      assert.equal((await invoke(store, 'PUT', {
+        products: JSON.parse(db.get('walkcards:products')), sales: [order]
+      }, adminHeaders)).statusCode, 200);
+      assert.deepEqual(JSON.parse(db.get(p.ORDERS_KEY)), []);
+      const fresh = await invoke(store, 'POST', body, { 'x-order-token': crypto.randomUUID() });
+      assert.equal(fresh.statusCode, 201);
+      const dashboard = await invoke(store, 'GET', null, adminHeaders);
+      assert.equal(dashboard.data.sales.length, 1);
+      assert.equal(dashboard.data.sales[0].id, fresh.data.order.id);
     });
     await t.test('ambiguous network failure preserves order; retry does not duplicate the charge', async () => {
       seed(); timeout = true;

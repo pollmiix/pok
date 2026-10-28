@@ -259,6 +259,7 @@ function initializeDashboard() {
         return;
       }
       const localSales = state.sales;
+      const migrateLocalSales = !shared.orderHistoryInitialized && !shared.sales?.length && localSales.length > 0;
       const sharedProducts = shared.products.map((product) => {
         const base = sourceProducts.find((entry) => entry.id === product.id);
         const refreshEtbPrice = base?.id === "imported-4" && Number(product.price) === 599.99;
@@ -279,17 +280,17 @@ function initializeDashboard() {
         : { ...product, stock: 23, stockVerified: true });
       state.sales = Array.isArray(shared.sales) ? shared.sales : [];
       const inventoryNeedsSync = shared.inventoryPreset !== "23-units-each";
-      if (missingProducts.length || catalogNeedsSync || inventoryNeedsSync || (!state.sales.length && localSales.length)) {
+      if (missingProducts.length || catalogNeedsSync || inventoryNeedsSync || migrateLocalSales) {
         const migration = await fetch("/api/store-data", {
           method: "PUT",
           headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken() },
           body: JSON.stringify({
             products: state.products,
-            sales: state.sales.length ? state.sales : localSales,
+            sales: migrateLocalSales ? localSales : state.sales,
             ...(inventoryNeedsSync ? { inventoryPreset: "23-units-each" } : {})
           })
         });
-        if (migration.ok && !state.sales.length) state.sales = localSales;
+        if (migration.ok && migrateLocalSales) state.sales = localSales;
       }
       localStorage.setItem(storageKey, JSON.stringify(state));
       render();
@@ -484,7 +485,7 @@ function initializeDashboard() {
   $("#new-product-button").addEventListener("click", () => openProductDialog());
   $("#clear-orders-button").addEventListener("click", async () => {
     if (!state.sales.length) return;
-    if (!window.confirm(`Apagar os ${state.sales.length} pedidos e zerar os valores deste painel? O catálogo e o estoque serão mantidos.`)) return;
+    if (!window.confirm(`Limpar os ${state.sales.length} pedidos e zerar os valores deste painel? O catálogo e o estoque serão mantidos. As cobranças não serão canceladas.`)) return;
     try {
       const response = await fetch("/api/store-data", { method: "DELETE", headers: { "X-CSRF-Token": csrfToken() } });
       const result = await response.json();
