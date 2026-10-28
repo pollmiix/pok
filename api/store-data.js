@@ -1,7 +1,7 @@
 const crypto = require('node:crypto');
 const payments = require('./_lib/payments');
 const pricing = require('../pricing');
-const { normalizeInventory } = require('./_lib/catalog');
+const { normalizeInventory, applyConfirmedInventory } = require('./_lib/catalog');
 
 const AUTH_COOKIE = 'walkcards_admin';
 const CSRF_COOKIE = 'walkcards_csrf';
@@ -197,6 +197,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   let lease;
   try {
+    await applyConfirmedInventory();
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
       lease = await payments.lock();
       if (!lease) return sendJson(res, 409, { error: 'A loja está atualizando um pedido. Aguarde alguns segundos e tente novamente.' });

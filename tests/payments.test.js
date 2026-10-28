@@ -10,6 +10,7 @@ const status = require('../api/payment-status');
 const webhook = require('../api/blackcat-webhook');
 const adminPage = require('../api/admin');
 const pricing = require('../pricing');
+const { INVENTORY_ADJUSTMENT_KEY } = require('../api/_lib/catalog');
 
 test('Blackcat payment lifecycle with mocked provider and storage', async t => {
   const originalFetch = global.fetch;
@@ -78,6 +79,7 @@ test('Blackcat payment lifecycle with mocked provider and storage', async t => {
   };
   function seed() {
     db.clear();
+    db.set(INVENTORY_ADJUSTMENT_KEY, 'applied');
     db.set('walkcards:products', JSON.stringify([{ id: 'p1', name: 'Cartas', price: 25.90, stockVerified: true, stock: 4 }]));
     db.set(p.SETTINGS_KEY, JSON.stringify({ enabled: true }));
   }

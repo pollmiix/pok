@@ -8,6 +8,7 @@ Revisão em 28/10/2026. As mudanças corrigem inconsistências técnicas e de co
 - Empresa exibida: Time Walk Cards Colecionaveis LTDA, CNPJ 19.271.540/0001-38, com endereço em Osasco já cadastrado no site.
 - Entrega para todo o Brasil com frete grátis, sem mínimo informado.
 - Atendimento em horário comercial.
+- Em 28/10/2026, o responsável confirmou estoque para todos os produtos. Aplicado ajuste único para 22 unidades por produto, com cópia do catálogo anterior no banco e marcador para não repor automaticamente unidades vendidas.
 - Prazo estimado total de entrega de 7 a 9 dias úteis após a confirmação do pagamento, incluindo preparação e transporte.
 - Direito de arrependimento em compras online por 7 dias após o recebimento. Os direitos relativos a defeitos não ficam limitados a esse prazo.
 
@@ -28,7 +29,7 @@ Revisão em 28/10/2026. As mudanças corrigem inconsistências técnicas e de co
 
 1. No aviso exibido pelo Google, concluir **Verificar identidade**. O nome e o endereço dos documentos precisam corresponder aos dados no Merchant Center e no perfil de pagamentos. A confirmação do responsável no chat não substitui a validação documental do Google.
 2. Conferir razão social, CNPJ, endereço e telefone reais no site, no Merchant Center e nos documentos. Verificar o telefone e a propriedade do domínio onde o Google solicitar.
-3. Em **Painel → Produtos**, conferir os saldos reais e salvar cada produto com a confirmação de estoque. O catálogo importado não comprova estoque físico, procedência, GTIN, autorização de imagens ou características do produto.
+3. Em **Painel → Produtos**, manter os saldos reais atualizados. O ajuste único para 22 unidades por produto registra a confirmação do responsável; o catálogo importado não comprova estoque físico, procedência, GTIN, autorização de imagens ou características do produto.
 4. O prazo estimado total confirmado pelo responsável e publicado é de 7 a 9 dias úteis após a confirmação do pagamento, incluindo preparação e transporte. Configurar no Merchant Center prazos de processamento e transporte cuja soma corresponda a essa estimativa. A divisão entre postagem e transporte e a transportadora não foram informadas; não foi inventada uma divisão desses prazos no feed.
 5. Configurar frete para o Brasil a R$ 0,00 no Merchant Center e cadastrar a política de devolução: https://walkcards.online/trocas-devolucoes/. Usar os mesmos prazos reais de envio da operação.
 6. Atualizar a fonte de produtos: https://walkcards.online/merchant-feed.xml. Esperar o processamento e conferir os links, preços e disponibilidade. Sitemap: https://walkcards.online/sitemap.xml.
