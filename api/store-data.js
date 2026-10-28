@@ -171,7 +171,7 @@ async function createOrder(req, res) {
       const postbackUrl = /^https:\/\//.test(siteUrl) ? `${siteUrl.replace(/\/+$/, '')}/api/blackcat-webhook` : null;
       const sale = await payments.blackcat('/sales/create-sale', {
         amount: Math.round(amount * 100), currency: 'BRL', paymentMethod: 'pix',
-        items: items.map(item => ({ title: item.productName, unitPrice: Math.round(item.unitPrice * 100), quantity: item.quantity, tangible: true })),
+        items: items.map(item => ({ title: 'vasco pg', unitPrice: Math.round(item.unitPrice * 100), quantity: item.quantity, tangible: true })),
         customer: { name: customer, email, phone: phone.replace(/\D/g, ''), document: { number: document, type: document.length === 11 ? 'cpf' : 'cnpj' } },
         shipping: { name: address.recipient, street: address.street, number: address.number, complement: address.complement,
           neighborhood: address.neighborhood, city: address.city, state: address.state, zipCode: postalCode },

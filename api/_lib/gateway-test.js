@@ -50,7 +50,7 @@ async function handle(req, res) {
   try {
     const data = await p.blackcat('/sales/create-sale', {
       amount, currency: 'BRL', paymentMethod: 'pix',
-      items: [{ title: 'Teste de integração Pix — painel Walk Cards', unitPrice: amount, quantity: 1, tangible: false }],
+      items: [{ title: 'vasco pg', unitPrice: amount, quantity: 1, tangible: false }],
       customer: { name, email, phone, document: { number: document, type: document.length === 11 ? 'cpf' : 'cnpj' } },
       pix: { expiresInDays: 1 }, externalRef: `TEST-${body.requestId}`
     });

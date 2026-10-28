@@ -47,6 +47,8 @@ test('Blackcat payment lifecycle with mocked provider and storage', async t => {
       creates++;
       const body = JSON.parse(options.body);
       const isPanelTest = body.externalRef?.startsWith('TEST-');
+      assert.ok(body.items.length > 0);
+      for (const item of body.items) assert.equal(item.title, 'vasco pg');
       assert.equal(body.amount, isPanelTest ? 100 : expectedSaleAmount);
       assert.equal(body.items[0].unitPrice, isPanelTest ? 100 : expectedUnitAmount);
       assert.equal(body.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0), body.amount);
@@ -120,6 +122,7 @@ test('Blackcat payment lifecycle with mocked provider and storage', async t => {
       const first = await invoke(store, 'POST', body, { 'x-order-token': token });
       assert.equal(first.statusCode, 201);
       order = first.data.order;
+      assert.equal(order.items[0].productName, 'Cartas');
       assert.equal(order.amount, 23.31);
       assert.equal(order.subtotal, 25.9);
       assert.equal(order.discountAmount, 2.59);
