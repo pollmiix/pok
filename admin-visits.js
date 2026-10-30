@@ -4,7 +4,7 @@
   if (!root) return;
   const $ = selector => root.querySelector(selector);
   let page = 1, pages = 1, busy = false;
-  let events = null, connected = false, refreshQueued = false, refreshTimer;
+  let events = null, refreshQueued = false, refreshTimer;
   const liveStatus = document.createElement('span');
   liveStatus.className = 'visit-live-status';
   liveStatus.setAttribute('role', 'status');
@@ -19,7 +19,7 @@
     refreshTimer = setTimeout(() => { if (busy) refreshQueued = true; else load(); }, 80);
   }
   function stopLive() {
-    events?.close(); events = null; connected = false;
+    events?.close(); events = null;
   }
   function startLive() {
     stopLive();
@@ -29,12 +29,11 @@
     showConnection('Conectando ao vivo…');
     events = new EventSource('/api/visits?live=1');
     events.addEventListener('ready', () => {
-      connected = true;
       showConnection('● Ao vivo', true);
       scheduleRefresh();
     });
     events.addEventListener('change', scheduleRefresh);
-    events.onerror = () => { connected = false; showConnection('Reconectando · atualização a cada 2 segundos'); };
+    events.onerror = () => { showConnection('Reconectando · atualização a cada 2 segundos'); };
   }
   const csrf = () => document.querySelector('input[name="csrf_token"]')?.value || '';
   const date = value => new Date(value).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });

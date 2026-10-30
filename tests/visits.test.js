@@ -47,6 +47,7 @@ test('visits require authentication, protect mutations and enforce IP blocks', a
         if (old) { row.firstSeen = old.firstSeen; row.referrer = old.referrer; }
         db.set(recordKey, JSON.stringify(row)); index.set(row.id, Number(now));
       } else if (keys === 2) { db.delete(values[0]); index.delete(values[2]); }
+      else if (script.includes("redis.call('DEL'")) { db.delete(values[0]); }
       else {
         const [key, ip, action] = values;
         const blocked = JSON.parse(db.get(key) || '{}');
@@ -65,6 +66,7 @@ test('visits require authentication, protect mutations and enforce IP blocks', a
   try {
     await t.test('public requests cannot read visits or modify blocks', async () => {
       for (const method of ['GET', 'PATCH', 'DELETE']) assert.equal((await invoke(method, { id, action: 'block' })).statusCode, 401);
+      assert.equal((await invoke('GET', {}, {}, { live: '1' })).statusCode, 401);
       assert.equal((await invoke('PATCH', { id, action: 'unblock-all' }, { cookie: admin.cookie })).statusCode, 403);
     });
     await t.test('records server metadata and preserves initial source', async () => {

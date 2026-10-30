@@ -11,7 +11,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.4.4/qrcode.min.js" defer></script>
   <script src="./pix-qr.js" defer></script>
   <script src="./admin.js?v=merchant-review-20261028" defer></script>
-  <script src="/admin-visits.js?v=20261030-2s" defer></script>
+  <script src="/admin-visits.js?v=20261030-live" defer></script>
 </head>
 <body>
 
@@ -93,12 +93,12 @@
             <div class="panel-heading visits-heading">
               <div><h3>Lista de visitas</h3><p>Atividade dos últimos 30 dias · Localização aproximada pelo IP</p></div>
               <div class="visits-tools">
-                <label class="visits-auto"><input type="checkbox" id="visits-auto" checked> Atualizar a cada 2 segundos</label>
+                <label class="visits-auto"><input type="checkbox" id="visits-auto" checked> Acompanhar ao vivo</label>
                 <button class="button button-secondary" type="button" id="visits-refresh">Atualizar painel</button>
                 <button class="text-button" type="button" id="visits-unblock-all">Desbloquear todos os IPs</button>
               </div>
             </div>
-            <div class="visits-metrics"><div><span>Visitas registradas</span><strong id="visits-total">—</strong></div><div><span>Pessoas online</span><strong id="visits-online">—</strong></div><small>Online: atividade nos últimos 45 segundos em uma aba visível.</small></div>
+            <div class="visits-metrics"><div><span>Visitas registradas</span><strong id="visits-total">—</strong></div><div><span>Pessoas online</span><strong id="visits-online">—</strong></div><small>Entradas e etapas atualizadas ao vivo. Offline em até 10 segundos se a conexão for interrompida.</small></div>
             <p class="visits-error" id="visits-error" role="alert"></p>
             <div class="table-wrap"><table class="visits-table"><thead><tr><th>BLOQUEIO</th><th>AÇÃO</th><th>ÚLTIMA ATIVIDADE</th><th>IP</th><th>DISPOSITIVO</th><th>NAVEGADOR</th><th>STATUS</th><th>ETAPA / PRODUTO</th><th>PÁGINA / LINK</th><th>PROVENIENTE</th><th>LOCALIZAÇÃO APROX. (IP)</th></tr></thead><tbody id="visits-body"></tbody></table></div>
             <div class="empty-state hidden" id="visits-empty">Nenhuma visita registrada. As visitas aparecerão conforme os clientes acessarem a loja.</div>
