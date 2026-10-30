@@ -1,5 +1,6 @@
 const p = require('./_lib/payments');
 const v = require('./_lib/visits');
+const live = require('./_lib/visits-live');
 const validId = id => typeof id === 'string' && /^[a-f0-9-]{36}$/i.test(id);
 
 module.exports = async function handler(req, res) {
@@ -25,11 +26,13 @@ module.exports = async function handler(req, res) {
         if old then local prev = cjson.decode(old); row.firstSeen = prev.firstSeen; row.referrer = prev.referrer end;
         redis.call('SET', KEYS[1], cjson.encode(row), 'EX', ARGV[3]);
         redis.call('ZADD', KEYS[2], ARGV[2], row.id);
-        redis.call('ZREMRANGEBYSCORE', KEYS[2], '-inf', ARGV[4]); return 1`, 2,
+        redis.call('ZREMRANGEBYSCORE', KEYS[2], '-inf', ARGV[4]);
+        redis.call('PUBLISH', '${live.CHANNEL}', 'changed'); return 1`, 2,
       v.PREFIX + body.id, v.INDEX, JSON.stringify(record), now, v.RETENTION, now - v.RETENTION * 1000]);
       return p.json(res, 200, { ok: true });
     }
     if (!p.admin(req)) return p.json(res, 401, { error: 'Entre no painel para consultar as visitas.' });
+    if (req.method === 'GET' && req.query?.live === '1') return await live.stream(req, res);
     if (req.method === 'GET') {
       const now = Date.now();
       await p.redis(['ZREMRANGEBYSCORE', v.INDEX, '-inf', now - v.RETENTION * 1000]);
@@ -42,11 +45,11 @@ module.exports = async function handler(req, res) {
       const visits = raw.filter(Boolean).map(row => {
         const visit = JSON.parse(row);
         visit.blocked = Boolean(blocked[v.ipKey(visit.ip)]);
-        visit.online = !visit.blocked && visit.visible && now - visit.lastSeen < 45000;
+        visit.online = !visit.blocked && visit.visible && now - visit.lastSeen < 10000;
         return visit;
       });
       // Online includes only foreground sessions with a recent heartbeat.
-      const activeIds = await p.redis(['ZRANGEBYSCORE', v.INDEX, now - 45000, '+inf']);
+      const activeIds = await p.redis(['ZRANGEBYSCORE', v.INDEX, now - 10000, '+inf']);
       const active = activeIds.length ? await p.redis(['MGET', ...activeIds.map(id => v.PREFIX + id)]) : [];
       const online = active.filter(Boolean).map(JSON.parse).filter(row => row.visible && !blocked[v.ipKey(row.ip)]).length;
       return p.json(res, 200, { visits, total, online, page, pages, updatedAt: now });
@@ -54,12 +57,12 @@ module.exports = async function handler(req, res) {
     if (req.method === 'PATCH' || req.method === 'DELETE') {
       if (!p.csrf(req)) return p.json(res, 403, { error: 'Atualize o painel e tente novamente.' });
       if (req.method === 'PATCH' && body.action === 'unblock-all') {
-        await p.redis(['DEL', v.BLOCKS]);
+        await p.redis(['EVAL', "redis.call('DEL', KEYS[1]); redis.call('PUBLISH', ARGV[1], 'changed'); return 1", 1, v.BLOCKS, live.CHANNEL]);
         return p.json(res, 200, { ok: true });
       }
       if (!validId(body.id)) return p.json(res, 400, { error: 'Visita inválida.' });
       if (req.method === 'DELETE') {
-        await p.redis(['EVAL', "redis.call('DEL', KEYS[1]); redis.call('ZREM', KEYS[2], ARGV[1]); return 1", 2, v.PREFIX + body.id, v.INDEX, body.id]);
+        await p.redis(['EVAL', "redis.call('DEL', KEYS[1]); redis.call('ZREM', KEYS[2], ARGV[1]); redis.call('PUBLISH', ARGV[2], 'changed'); return 1", 2, v.PREFIX + body.id, v.INDEX, body.id, live.CHANNEL]);
         return p.json(res, 200, { ok: true });
       }
       if (!['block', 'unblock'].includes(body.action)) return p.json(res, 400, { error: 'Ação inválida.' });
@@ -69,7 +72,7 @@ module.exports = async function handler(req, res) {
       if (!ip || ip === 'Indisponível') return p.json(res, 400, { error: 'IP indisponível.' });
       await p.redis(['EVAL', `local data = cjson.decode(redis.call('GET', KEYS[1]) or '{}');
         if ARGV[2] == 'block' then data[ARGV[1]] = true else data[ARGV[1]] = nil end;
-        redis.call('SET', KEYS[1], cjson.encode(data)); return 1`, 1, v.BLOCKS, v.ipKey(ip), body.action]);
+        redis.call('SET', KEYS[1], cjson.encode(data)); redis.call('PUBLISH', '${live.CHANNEL}', 'changed'); return 1`, 1, v.BLOCKS, v.ipKey(ip), body.action]);
       return p.json(res, 200, { ok: true });
     }
     res.setHeader('Allow', 'GET, POST, PATCH, DELETE');
