@@ -48,7 +48,7 @@
     finally { pending = false; }
   }
   send();
-  setInterval(() => { if (!document.hidden) send(); }, 15000);
+  setInterval(() => { if (!document.hidden) send(); }, 2000);
   document.addEventListener('visibilitychange', () => send());
   window.addEventListener('pagehide', () => send(true));
   document.addEventListener('click', () => setTimeout(() => send(), 500));

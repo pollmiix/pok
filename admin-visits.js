@@ -82,5 +82,5 @@
     load({ action, id: node.dataset.visitId });
   });
   load();
-  setInterval(() => { if ($('#visits-auto').checked && !document.hidden) load(); }, 15000);
+  setInterval(() => { if ($('#visits-auto').checked && !document.hidden) load(); }, 2000);
 })();
