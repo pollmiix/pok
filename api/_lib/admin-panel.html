@@ -35,7 +35,7 @@
           <span class="local-indicator"></span>
           <div><strong>Dados compartilhados</strong><small>Sincronizados pelo servidor</small></div>
         </div>
-        <p>Este painel é uma demonstração. Não está conectado a pagamentos nem a um servidor.</p>
+        <p>Catálogo, pedidos e visitas sincronizados com o servidor da loja.</p>
         <form method="post" action="admin.php"><input type="hidden" name="csrf_token" value="{{CSRF_TOKEN}}"><button class="logout-button" type="submit" name="logout" value="1">Sair do painel</button></form>
       </div>
     </aside>
@@ -47,7 +47,7 @@
           <h1 id="page-title">Visão geral</h1>
         </div>
         <div class="topbar-actions">
-          <span class="demo-chip"><span></span>DEMONSTRAÇÃO</span>
+          <span class="demo-chip"><span></span>ADMINISTRAÇÃO</span>
           <form method="post" action="admin.php"><input type="hidden" name="csrf_token" value="{{CSRF_TOKEN}}"><button class="button button-secondary" type="submit" name="logout" value="1">Sair</button></form>
         </div>
       </header>
@@ -55,7 +55,7 @@
       <div class="page-content">
         <section class="notice" aria-label="Aviso sobre os dados">
           <span class="notice-icon" aria-hidden="true">i</span>
-          <p><strong>Modo de teste.</strong> Pedidos da loja aparecem aqui em todos os navegadores. Confira o pagamento no seu banco antes de confirmar; pagamentos não são verificados automaticamente. Pedidos de outros aparelhos não chegam a este painel sem um servidor.</p>
+          <p><strong>Modo de teste.</strong> Pedidos da loja aparecem aqui em todos os navegadores. Confira o pagamento no seu banco antes de confirmar; pagamentos não são verificados automaticamente. Pedidos e visitas de outros aparelhos são consultados pelo servidor.</p>
           <button class="notice-close" type="button" aria-label="Fechar aviso" id="notice-close">×</button>
         </section>
 

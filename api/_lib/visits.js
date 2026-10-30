@@ -28,7 +28,7 @@ function location(req) {
 }
 function pagePath(value) {
   const path = text(value, 400);
-  return path.startsWith('/') && !path.startsWith('//') ? path.split(/[?#]/)[0] : '/';
+  return path.startsWith('/') && !path.startsWith('//') && !/[\\\x00-\x1f]/.test(path) ? path.split(/[?#]/)[0] : '/';
 }
 function referrer(value) {
   try { const url = new URL(text(value, 1000)); return /^https?:$/.test(url.protocol) ? `${url.origin}${url.pathname}`.slice(0, 400) : ''; } catch { return ''; }
