@@ -197,6 +197,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   let lease;
   try {
+    if (!payments.admin(req) && await require('./_lib/visits').isBlocked(req)) return sendJson(res, 403, { blocked: true, error: 'Acesso bloqueado pela loja.' });
     await applyConfirmedInventory();
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
       lease = await payments.lock();

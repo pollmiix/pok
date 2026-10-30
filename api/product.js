@@ -11,6 +11,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   try {
+    if (!require('./_lib/payments').admin({ headers: req.headers || {} }) && await require('./_lib/visits').isBlocked(req)) { res.statusCode = 403; return res.end('<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Acesso bloqueado</title><h1>Acesso bloqueado</h1><p>Entre em contato com a loja.</p></html>'); }
     const id = typeof req.query?.id === 'string' ? req.query.id : '';
     const product = (await publishedCatalog()).find(item => item.id === id);
     if (!product) {
@@ -44,7 +45,7 @@ module.exports = async function handler(req, res) {
 <meta property="og:type" content="product"><meta property="og:title" content="${html(product.name)}"><meta property="og:url" content="${html(url)}">
 <meta property="og:image" content="${html(images[0] || '')}"><link rel="stylesheet" href="/institucional.css">
 <style>.product-page{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}.product-photo{width:100%;max-height:480px;object-fit:contain}.product-price{font-size:30px;font-weight:700}.product-gallery{display:flex;gap:10px;overflow:auto}.product-gallery img{width:90px;height:90px;object-fit:contain}@media(max-width:680px){.product-page{grid-template-columns:1fr}}</style>
-<script type="application/ld+json">${JSON.stringify(structured).replace(/</g, '\\u003c')}</script></head><body>
+<script type="application/ld+json">${JSON.stringify(structured).replace(/</g, '\\u003c')}</script><script src="/visits.js?v=20261030" defer></script></head><body>
 <header class="info-header"><a href="/"><img src="/assets/walk-cards-logo.jpg" alt="Walk Cards"></a><nav aria-label="Navegação"><a href="/">Loja</a><a href="/contato/">Contato</a><a href="/trocas-devolucoes/">Devoluções</a></nav></header>
 <main class="info-main"><p><a href="/">Início</a> / Produto</p><div class="product-page"><section aria-label="Imagens do produto">${images[0] ? `<img class="product-photo" src="${html(images[0])}" alt="${html(product.name)}">` : ''}<div class="product-gallery">${images.slice(1, 9).map(image => `<img src="${html(image)}" alt="Outra imagem de ${html(product.name)}" loading="lazy">`).join('')}</div></section>
 <section><h1>${html(product.name)}</h1><p>Preço base: ${money(product.price)}</p><p class="product-price">${money(price)} <small>no Pix</small></p><p>10% de desconto no Pix já aplicado ao preço acima.</p><p>${available ? `${product.stock} unidades em estoque.` : product.stockVerified ? 'Produto esgotado.' : 'Disponibilidade sob consulta.'}</p>

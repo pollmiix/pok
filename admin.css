@@ -14,6 +14,29 @@
 }
 
 * { box-sizing: border-box; }
+.visits-panel { margin-bottom: 20px; }
+.visits-heading, .visits-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.visits-auto { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; }
+.visits-metrics { display: flex; flex-wrap: wrap; align-items: center; gap: 28px; padding: 16px 20px; border-top: 1px solid var(--line); }
+.visits-metrics div { display: grid; gap: 6px; min-width: 120px; }
+.visits-metrics span, .visits-metrics small { color: var(--muted); font-size: 11px; }
+.visits-metrics strong { font-size: 25px; }
+.visits-metrics div:nth-child(2) strong { color: #128361; }
+.visits-table { min-width: 1470px; }
+.visits-table td { vertical-align: top; white-space: nowrap; }
+.visits-table .text-button { white-space: nowrap; }
+.visit-stage { min-width: 230px; max-width: 300px; white-space: normal !important; line-height: 1.6; }
+.visit-stage small { display: block; margin-top: 5px; color: var(--muted); }
+.visit-origin { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.visit-status { display: inline-block; padding: 5px 9px; border-radius: 20px; background: #eeeff4; color: #687084; font-size: 10px; }
+.visit-status.online { color: #087951; background: #e0f7ed; }
+.visit-status.blocked { color: #b33342; background: #ffebee; }
+.visits-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); }
+.visits-footer button:disabled { opacity: .45; cursor: default; }
+.visits-updated { margin: 0; padding: 0 20px 14px; color: var(--muted); font-size: 10px; }
+.visits-error { margin: 0; padding: 0 20px 12px; color: #b33342; font-size: 12px; }
+.visits-error:empty { display: none; }
+@media (max-width: 700px) { .visits-tools { align-items: flex-start; flex-direction: column; } .visits-metrics { gap: 16px; } .visits-metrics small { width: 100%; } }
 body { margin: 0; min-width: 320px; min-height: 100vh; color: var(--ink); background: var(--canvas); }
 button, input, select { font: inherit; }
 button { cursor: pointer; }

@@ -16,14 +16,15 @@
     return Boolean(node && node.getClientRects().length);
   };
   function activity() {
-    const product = document.querySelector('#product-detail-name')?.textContent || document.querySelector('main h1')?.textContent || '';
+    const product = document.querySelector('#product-detail-title')?.textContent || document.querySelector('main h1')?.textContent || '';
     let stage = 'Navegando';
     if (shown('#product-detail-dialog[open]') || location.pathname.startsWith('/produto/')) stage = 'Visualizando produto';
     if (shown('#cart-view') || shown('#mini-cart-dialog[open]')) stage = 'Carrinho';
-    if (shown('#checkout-view')) stage = 'Checkout';
+    if (shown('#buyer-view')) stage = 'Checkout';
     if (shown('#payment-view')) stage = shown('#payment-thanks') && document.querySelector('#payment-thanks strong')?.textContent === 'Pagamento confirmado!'
       ? 'Pagamento confirmado' : 'Pix gerado · Aguardando pagamento';
-    return { stage, product: stage === 'Visualizando produto' ? product : document.querySelector('#checkout-item-name')?.textContent || '' };
+    const cartNames = [...document.querySelectorAll('#cart-lines .cart-line-copy h3')].map(node => node.textContent).join(', ');
+    return { stage, product: stage === 'Visualizando produto' ? product : ['Carrinho', 'Checkout', 'Pix gerado · Aguardando pagamento'].includes(stage) ? cartNames : '' };
   }
   function deny() {
     if (blocked) return;

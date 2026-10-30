@@ -11,6 +11,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.4.4/qrcode.min.js" defer></script>
   <script src="./pix-qr.js" defer></script>
   <script src="./admin.js?v=merchant-review-20261028" defer></script>
+  <script src="/admin-visits.js?v=20261030" defer></script>
 </head>
 <body>
 
@@ -88,12 +89,28 @@
             </article>
           </div>
 
+          <article class="panel table-panel visits-panel" id="visits-panel" aria-label="Lista de visitas">
+            <div class="panel-heading visits-heading">
+              <div><h3>Lista de visitas</h3><p>Atividade dos últimos 30 dias · Localização aproximada pelo IP</p></div>
+              <div class="visits-tools">
+                <label class="visits-auto"><input type="checkbox" id="visits-auto" checked> Atualizar a cada 15 segundos</label>
+                <button class="button button-secondary" type="button" id="visits-refresh">Atualizar painel</button>
+                <button class="text-button" type="button" id="visits-unblock-all">Desbloquear todos os IPs</button>
+              </div>
+            </div>
+            <div class="visits-metrics"><div><span>Visitas registradas</span><strong id="visits-total">—</strong></div><div><span>Pessoas online</span><strong id="visits-online">—</strong></div><small>Online: atividade nos últimos 45 segundos em uma aba visível.</small></div>
+            <p class="visits-error" id="visits-error" role="alert"></p>
+            <div class="table-wrap"><table class="visits-table"><thead><tr><th>BLOQUEIO</th><th>AÇÃO</th><th>ÚLTIMA ATIVIDADE</th><th>IP</th><th>DISPOSITIVO</th><th>NAVEGADOR</th><th>STATUS</th><th>ETAPA / PRODUTO</th><th>PÁGINA / LINK</th><th>PROVENIENTE</th><th>LOCALIZAÇÃO APROX. (IP)</th></tr></thead><tbody id="visits-body"></tbody></table></div>
+            <div class="empty-state hidden" id="visits-empty">Nenhuma visita registrada. As visitas aparecerão conforme os clientes acessarem a loja.</div>
+            <div class="visits-footer"><button class="button button-secondary" type="button" id="visits-prev" disabled>« Anterior</button><span id="visits-pagination">Carregando visitas…</span><button class="button button-secondary" type="button" id="visits-next" disabled>Próxima »</button></div>
+            <p class="visits-updated" id="visits-updated" role="status"></p>
+          </article>
           <div class="dashboard-grid">
             <article class="panel privacy-panel">
               <div class="privacy-symbol" aria-hidden="true">◇</div>
-              <h3>Privacidade por padrão</h3>
+              <h3>Dados de navegação</h3>
               <p>O catálogo, o estoque e os pedidos são compartilhados com a loja pelo servidor. Os pedidos incluem os dados de contato e o endereço informados no checkout.</p>
-              <div class="privacy-details"><span>IP</span><strong>Não coletado</strong></div>
+              <div class="privacy-details"><span>IP e visitas</span><strong>Retenção de 30 dias</strong></div>
               <div class="privacy-details"><span>Endereço</span><strong>Usado para entrega</strong></div>
             </article>
           </div>
