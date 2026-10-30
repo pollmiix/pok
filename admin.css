@@ -17,6 +17,8 @@
 .visits-panel { margin-bottom: 20px; }
 .visits-heading, .visits-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .visits-auto { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; }
+.visit-live-status { color: var(--muted); font-size: 11px; }
+.visit-live-status.connected { color: #087951; background: #e0f7ed; padding: 6px 10px; border-radius: 20px; }
 .visits-metrics { display: flex; flex-wrap: wrap; align-items: center; gap: 28px; padding: 16px 20px; border-top: 1px solid var(--line); }
 .visits-metrics div { display: grid; gap: 6px; min-width: 120px; }
 .visits-metrics span, .visits-metrics small { color: var(--muted); font-size: 11px; }

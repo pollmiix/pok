@@ -4,6 +4,38 @@
   if (!root) return;
   const $ = selector => root.querySelector(selector);
   let page = 1, pages = 1, busy = false;
+  let events = null, connected = false, refreshQueued = false, refreshTimer;
+  const liveStatus = document.createElement('span');
+  liveStatus.className = 'visit-live-status';
+  liveStatus.setAttribute('role', 'status');
+  $('#visits-refresh').before(liveStatus);
+  function showConnection(label, online = false) {
+    liveStatus.textContent = label;
+    liveStatus.classList.toggle('connected', online);
+  }
+  function scheduleRefresh() {
+    if (!$('#visits-auto').checked || document.hidden) return;
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => { if (busy) refreshQueued = true; else load(); }, 80);
+  }
+  function stopLive() {
+    events?.close(); events = null; connected = false;
+  }
+  function startLive() {
+    stopLive();
+    if (!$('#visits-auto').checked) { showConnection('Atualização pausada'); return; }
+    if (document.hidden) return;
+    if (!window.EventSource) { showConnection('Atualizando a cada 2 segundos'); return; }
+    showConnection('Conectando ao vivo…');
+    events = new EventSource('/api/visits?live=1');
+    events.addEventListener('ready', () => {
+      connected = true;
+      showConnection('● Ao vivo', true);
+      scheduleRefresh();
+    });
+    events.addEventListener('change', scheduleRefresh);
+    events.onerror = () => { connected = false; showConnection('Reconectando · atualização a cada 2 segundos'); };
+  }
   const csrf = () => document.querySelector('input[name="csrf_token"]')?.value || '';
   const date = value => new Date(value).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
   function cell(row, value, className = '') {
@@ -58,14 +90,17 @@
     $('#visits-body').replaceChildren(fragment);
   }
   async function load(action) {
-    if (busy) return;
+    if (busy) { if (!action) refreshQueued = true; return; }
     busy = true; root.setAttribute('aria-busy', 'true');
     $('#visits-error').textContent = '';
     try {
       if (action) await request(action.action === 'delete' ? 'DELETE' : 'PATCH', action);
       render(await request());
     } catch (error) { $('#visits-error').textContent = error.message; }
-    finally { busy = false; root.setAttribute('aria-busy', 'false'); }
+    finally {
+      busy = false; root.setAttribute('aria-busy', 'false');
+      if (refreshQueued) { refreshQueued = false; scheduleRefresh(); }
+    }
   }
   $('#visits-refresh').addEventListener('click', () => load());
   $('#visits-prev').addEventListener('click', () => { if (!busy && page > 1) { page--; load(); } });
@@ -82,5 +117,11 @@
     load({ action, id: node.dataset.visitId });
   });
   load();
+  startLive();
+  $('#visits-auto').addEventListener('change', startLive);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) stopLive(); else { startLive(); scheduleRefresh(); } });
+  window.addEventListener('pagehide', stopLive);
+  window.addEventListener('pageshow', event => { if (event.persisted) { startLive(); scheduleRefresh(); } });
+  // Recover dropped events and expire visitors whose connection ended abruptly.
   setInterval(() => { if ($('#visits-auto').checked && !document.hidden) load(); }, 2000);
 })();

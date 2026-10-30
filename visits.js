@@ -11,6 +11,7 @@
   } catch { id = crypto.randomUUID(); }
   let pending = false;
   let blocked = false;
+  let queued = null, activityTimer, lastActivity = '';
   const shown = selector => {
     const node = document.querySelector(selector);
     return Boolean(node && node.getClientRects().length);
@@ -28,6 +29,7 @@
   }
   function deny() {
     if (blocked) return;
+    if (!document.body) { document.addEventListener('DOMContentLoaded', deny, { once: true }); return; }
     blocked = true;
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#f6f7fb;display:grid;place-content:center;text-align:center;padding:24px;font:16px Segoe UI,sans-serif;color:#20233a';
@@ -38,18 +40,42 @@
     document.body.append(overlay);
   }
   async function send(leaving = false) {
-    if (pending || blocked) return;
+    if (blocked) return;
+    if (pending) { queued = leaving; return; }
     pending = true;
     try {
       const response = await fetch('/api/visits', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, page: location.pathname, referrer: document.referrer, visible: !leaving && !document.hidden, ...activity() }), keepalive: true });
       if (response.status === 403 && (await response.json()).blocked) deny();
     } catch { /* Tracking never prevents shopping when the service is unavailable. */ }
-    finally { pending = false; }
+    finally {
+      pending = false;
+      if (queued !== null) { const leavingNext = queued; queued = null; send(leavingNext); }
+    }
+  }
+  function changed() {
+    const current = JSON.stringify({ page: location.pathname, visible: !document.hidden, ...activity() });
+    if (current === lastActivity) return;
+    lastActivity = current;
+    clearTimeout(activityTimer);
+    activityTimer = setTimeout(() => send(), 60);
+  }
+  function watch() {
+    new MutationObserver(changed).observe(document.documentElement, {
+      subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['open', 'class']
+    });
+    changed();
   }
   send();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watch, { once: true });
+  else watch();
   setInterval(() => { if (!document.hidden) send(); }, 2000);
   document.addEventListener('visibilitychange', () => send());
-  window.addEventListener('pagehide', () => send(true));
-  document.addEventListener('click', () => setTimeout(() => send(), 500));
+  window.addEventListener('pageshow', () => send());
+  window.addEventListener('popstate', changed);
+  window.addEventListener('pagehide', () => {
+    clearTimeout(activityTimer);
+    const payload = JSON.stringify({ id, page: location.pathname, referrer: document.referrer, visible: false, ...activity() });
+    if (!navigator.sendBeacon?.('/api/visits', new Blob([payload], { type: 'application/json' }))) send(true);
+  });
 })();
