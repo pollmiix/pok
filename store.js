@@ -288,7 +288,10 @@
         <small class="store-price-note">no Pix</small>
         ${verifiedStock(product) ? `<span class="store-stock">${soldOut ? "Produto indisponível" : `${product.stock} unidades em estoque`}</span>` : ""}
         <span class="pix-payment-label">10% DE DESCONTO NO PIX</span>
-        <button class="add-to-cart" type="button" data-add-product="${escapeHtml(product.id)}" ${soldOut ? "disabled" : ""}><span aria-hidden="true">⊕</span>${!verifiedStock(product) ? "CONSULTE ESTOQUE" : soldOut ? "ESGOTADO" : "ADICIONAR"}</button>
+        <div class="product-card-actions">
+          <button class="view-product" type="button" data-product-details="${escapeHtml(product.id)}">VER PRODUTO <span aria-hidden="true">→</span></button>
+          <button class="add-to-cart" type="button" data-add-product="${escapeHtml(product.id)}" ${soldOut ? "disabled" : ""}>${!verifiedStock(product) ? "CONSULTE ESTOQUE" : soldOut ? "ESGOTADO" : "ADICIONAR"}</button>
+        </div>
       </div>
     </article>`;
   }
