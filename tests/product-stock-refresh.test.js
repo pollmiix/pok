@@ -19,6 +19,7 @@ test('an already-open product updates from unverified stock when the server resp
   const context = {
     products: [initial], importedProducts: [initial], dashboardState: {}, cart: [], favorites: [],
     detailProductId: initial.id,
+    sharedProductsLoading: false,
     $: node, getProduct: id => context.products.find(product => product.id === id),
     verifiedStock: product => product.stockVerified === true && Number.isInteger(product.stock),
     renderProductGallery() {}, renderRelatedProducts() {}, renderProducts() {}, renderCart() {},

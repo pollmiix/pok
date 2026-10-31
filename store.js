@@ -119,6 +119,8 @@
   let detailProductId = "";
   let detailGalleryImages = [];
   let detailGalleryIndex = 0;
+  let sharedProductsLoading = false;
+  let initialProductOpened = false;
 
   function showToast(message) {
     const toast = $("#store-toast");
@@ -162,6 +164,8 @@
   }
 
   async function loadSharedProducts() {
+    if (sharedProductsLoading) return;
+    sharedProductsLoading = true;
     try {
       const response = await fetch("/api/store-data", { cache: "no-store" });
       const shared = await response.json();
@@ -173,19 +177,26 @@
       });
       const sharedProductIds = new Set(sharedProducts.map((product) => product.id));
       const newCatalogProducts = importedProducts.filter((product) => !sharedProductIds.has(product.id));
-      products = [...sharedProducts, ...newCatalogProducts];
+      const nextProducts = [...sharedProducts, ...newCatalogProducts];
+      const catalogChanged = JSON.stringify(products) !== JSON.stringify(nextProducts);
+      const previousDetail = getProduct(detailProductId);
+      const previousCartProducts = JSON.stringify(cart.map(item => getProduct(item.productId)));
+      const previousCart = JSON.stringify(cart);
+      products = nextProducts;
       dashboardState.products = products;
       cart = cart.filter((item) => products.some((product) => product.id === item.productId));
-      saveCart();
-      renderProducts();
-      renderCart();
+      if (JSON.stringify(cart) !== previousCart) saveCart();
+      if (catalogChanged) renderProducts();
+      if (JSON.stringify(cart) !== previousCart || JSON.stringify(cart.map(item => getProduct(item.productId))) !== previousCartProducts) renderCart();
       if (detailProductId && $("#product-detail-dialog").open) {
         const currentProduct = getProduct(detailProductId);
-        if (currentProduct) renderProductDetails(currentProduct);
+        if (currentProduct && JSON.stringify(currentProduct) !== JSON.stringify(previousDetail)) renderProductDetails(currentProduct);
       }
       openProductFromUrl();
     } catch (error) {
       console.error("Não foi possível carregar o catálogo compartilhado.", error);
+    } finally {
+      sharedProductsLoading = false;
     }
   }
 
@@ -412,6 +423,8 @@
   }
 
   function renderProductDetails(product) {
+    const dialogScroll = $("#product-detail-dialog").scrollTop;
+    const relatedScroll = $("#related-products").scrollLeft;
     const soldOut = !verifiedStock(product) || product.stock < 1;
     renderProductGallery(product);
     $("#product-detail-title").textContent = product.name;
@@ -433,6 +446,8 @@
     $("#product-detail-add").disabled = soldOut;
     $("#product-detail-buy").dataset.productId = product.id;
     $("#product-detail-add").dataset.productId = product.id;
+    $("#product-detail-dialog").scrollTop = dialogScroll;
+    $("#related-products").scrollLeft = relatedScroll;
   }
 
   function renderRelatedProducts(product) {
@@ -482,8 +497,12 @@
   }
 
   function openProductFromUrl() {
+    if (initialProductOpened) return;
     const productId = new URLSearchParams(window.location.search).get("produto");
-    if (productId && getProduct(productId) && !$("#product-detail-dialog").open) openProductDetails(productId);
+    if (!productId) { initialProductOpened = true; return; }
+    if (!getProduct(productId)) return;
+    initialProductOpened = true;
+    if (!document.querySelector("dialog[open]")) openProductDetails(productId);
   }
 
   function renderCart() {
