@@ -176,9 +176,13 @@
       products = [...sharedProducts, ...newCatalogProducts];
       dashboardState.products = products;
       cart = cart.filter((item) => products.some((product) => product.id === item.productId));
-      localStorage.setItem(cartStorageKey, JSON.stringify(cart));
+      saveCart();
       renderProducts();
       renderCart();
+      if (detailProductId && $("#product-detail-dialog").open) {
+        const currentProduct = getProduct(detailProductId);
+        if (currentProduct) renderProductDetails(currentProduct);
+      }
       openProductFromUrl();
     } catch (error) {
       console.error("Não foi possível carregar o catálogo compartilhado.", error);
