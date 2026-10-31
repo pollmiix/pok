@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --ink: #25223c;
   --muted: #79778c;
   --line: #ebe9f2;
@@ -13,6 +13,8 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; background: var(--canvas); }
+html:has(dialog[open]) { overflow: hidden; }
+.product-detail-dialog, .checkout-dialog, .mini-cart-dialog, .buyer-view, .payment-view, .cart-wide-content, .mini-cart-lines { overscroll-behavior: contain; }
 button, input, select, textarea { font: inherit; font-family: "Montserrat", Arial, sans-serif; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
@@ -731,3 +733,11 @@ button { cursor: pointer; }
 .product-detail-store-header { top: 36px; }
 .product-detail-close { transform: translateY(36px); }
 .product-detail-layout { padding-top: 96px; }
+
+/* Keep mobile forms readable without focus zoom moving the checkout. */
+@media (max-width: 700px) {
+  .store-search input, .catalog-search input, .delivery-form input,
+  .delivery-form select, .mini-coupon-input input, .cart-coupon-input input {
+    font-size: 16px;
+  }
+}

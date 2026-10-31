@@ -922,6 +922,9 @@
     if (showcaseSections.includes(targetSection)) {
         event.preventDefault();
         $("#store-search").value = "";
+        $("#catalog-search").value = "";
+        $("#detail-store-search").value = "";
+        showFavoritesOnly = false;
         visibleCount = pageSize;
         if (window.location.hash !== selectedCategory.hash) {
           window.history.pushState(null, "", selectedCategory.hash);
