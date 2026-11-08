@@ -4,30 +4,31 @@
     "api/storefront.js": { "includeFiles": "{index.html,catalog.js,catalog-galleries.js}" },
     "api/visits.js": { "maxDuration": 60 }
   },
-  "rewrites": [
+  "routes": [
     {
-      "source": "/",
-      "destination": "/api/storefront"
+      "src": "^/$",
+      "dest": "/api/storefront"
     },
     {
-      "source": "/index.html",
-      "destination": "/api/storefront"
+      "src": "^/index\\.html$",
+      "dest": "/api/storefront"
     },
     {
-      "source": "/produto/:id",
-      "destination": "/api/product?id=:id"
+      "src": "^/produto/([^/]+)/?$",
+      "dest": "/api/product?id=$1"
     },
     {
-      "source": "/sitemap.xml",
-      "destination": "/api/sitemap"
+      "src": "^/sitemap\\.xml$",
+      "dest": "/api/sitemap"
     },
     {
-      "source": "/admin.php",
-      "destination": "/api/admin"
+      "src": "^/admin\\.php$",
+      "dest": "/api/admin"
     },
     {
-      "source": "/merchant-feed.xml",
-      "destination": "/api/merchant-feed"
-    }
+      "src": "^/merchant-feed\\.xml$",
+      "dest": "/api/merchant-feed"
+    },
+    { "handle": "filesystem" }
   ]
 }
