@@ -45,6 +45,12 @@ test('merchant feed and product pages use the same real inventory, Pix price and
       const page = await invoke(productPage, { id: 'imported-1' });
       const schema = JSON.parse(page.body.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
       assert.equal(schema.name, shared[0].name);
+      const description = require('../product-info').describeProduct(shared[0]);
+      assert.equal(schema.description, description);
+      assert.ok(page.body.includes('Ficha técnica'));
+      const feedDescription = response.body.match(/<g:description>([\s\S]*?)<\/g:description>/)[1]
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+      assert.equal(feedDescription, description);
       assert.equal(schema.offers.price, '23.31');
       assert.equal(schema.offers.availability, 'https://schema.org/InStock');
       assert.equal(schema.offers.shippingDetails.shippingRate.value, 0);

@@ -21,6 +21,7 @@ test('an already-open product updates from unverified stock when the server resp
   node('#related-products').scrollLeft = 180;
   const context = {
     products: [initial], importedProducts: [initial], dashboardState: {}, cart: [], favorites: [],
+    window: { StoreProductInfo: require('../product-info') },
     detailProductId: initial.id,
     sharedProductsLoading: false,
     $: node, getProduct: id => context.products.find(product => product.id === id),

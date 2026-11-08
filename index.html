@@ -9,7 +9,7 @@
   <meta name="description" content="Cartas e produtos colecionáveis Pokémon na Walk Cards. Veja preços no Pix, disponibilidade, atendimento e políticas de compra.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Walk Cards | Cartas colecionáveis Pokémon">
-  <meta property="og:description" content="Consulte o catálogo da Walk Cards e confirme preço, estoque e entrega com a loja.">
+  <meta property="og:description" content="Produtos Pokémon com preços no Pix, disponibilidade e frete grátis para todo o Brasil.">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="https://walkcards.online/">
   <meta property="og:url" content="https://walkcards.online/">
@@ -26,7 +26,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.4.4/qrcode.min.js" defer></script>
   <script src="./pix-qr.js" defer></script>
   <script src="./pricing.js" defer></script>
-  <script src="./store.js?v=product-actions-20261031" defer></script>
+  <script src="./product-info.js?v=20261108" defer></script>
+  <script src="./store.js?v=merchant-20261108" defer></script>
   <link rel="stylesheet" href="./pix-welcome.css?v=1">
 
 
@@ -119,7 +120,7 @@
       <div class="catalog-layout">
         <aside class="catalog-sidebar">
           <div class="catalog-heading">
-            <div><h2>Pokemon</h2><span class="catalog-total" id="catalog-total">0 produtos</span></div>
+            <div><h2>Pokémon</h2><span class="catalog-total" id="catalog-total">Carregando catálogo…</span></div>
           </div>
           <div class="catalog-filters" aria-label="Filtros do catálogo">
             <strong>Filtrar por...</strong>
@@ -127,12 +128,12 @@
             <button class="catalog-filter" type="button" data-catalog-filter="best-sellers" aria-pressed="false"><span class="filter-switch" aria-hidden="true"></span><span>Destaques da loja</span></button>
             <div class="price-filter">
               <strong>Faixa de preço</strong>
-              <div class="price-filter-values"><span id="minimum-price-label">R$ 0,00</span><span id="maximum-price-label">R$ 0,00</span></div>
+              <div class="price-filter-values"><span id="minimum-price-label">Carregando…</span><span id="maximum-price-label">Carregando…</span></div>
               <div class="price-range-controls">
                 <input id="minimum-price" type="range" aria-label="Preço mínimo" step="0.01">
                 <input id="maximum-price" type="range" aria-label="Preço máximo" step="0.01">
               </div>
-              <div class="price-filter-bounds"><span id="price-floor-label">R$ 0,00</span><span id="price-ceiling-label">R$ 0,00</span></div>
+              <div class="price-filter-bounds"><span id="price-floor-label">Carregando…</span><span id="price-ceiling-label">Carregando…</span></div>
             </div>
           </div>
         </aside>
@@ -195,7 +196,7 @@
           <button class="favorite-button product-detail-favorite" id="product-detail-favorite" type="button" data-detail-favorite aria-label="Adicionar aos favoritos" aria-pressed="false">♡</button>
         </div>
         <strong class="product-detail-price" id="product-detail-price"></strong>
-        <small class="detail-price-note">Preço de referência; confirme o valor atualizado com a loja.</small>
+        <small class="detail-price-note">Preço no Pix com 10% de desconto já aplicado sobre o preço base.</small>
         <p class="product-detail-stock" id="product-detail-stock"></p>
         <div class="product-detail-pix">10% de desconto no Pix em todos os produtos</div>
         <div class="product-detail-description">
@@ -273,7 +274,7 @@
               <div><span>Desconto no Pix (10%)</span><strong id="cart-pix-discount">− R$ 0,00</strong></div>
               <div><span>Frete</span><strong id="cart-shipping">Grátis</strong></div>
               <div class="cart-final-total"><span>Total no Pix</span><strong id="cart-total">R$ 0,00</strong></div>
-              <small id="cart-payment-note">Preço e forma de pagamento sujeitos à confirmação da loja.</small>
+              <small id="cart-payment-note">Pagamento por Pix à vista. Total com 10% de desconto nos produtos e frete grátis.</small>
             </div>
             <button class="checkout-submit cart-continue" id="continue-checkout" type="button">continuar para pagamento</button>
             <button class="add-more-items" id="add-more-items" type="button">Escolher mais produtos</button>

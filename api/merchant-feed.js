@@ -1,3 +1,4 @@
+const productInfo = require('../product-info');
 const { publishedCatalog, siteUrl, productUrl } = require('./_lib/catalog');
 const pricing = require('../pricing');
 
@@ -18,7 +19,7 @@ function productXml(product) {
     try { return new URL(source, siteUrl()).href; } catch { return ''; }
   }).filter(Boolean);
   if (!images.length) return '';
-  const description = String(product.description || `${title}. Confira os detalhes e a disponibilidade na página do produto.`).trim();
+  const description = productInfo.describeProduct(product);
   const link = new URL(productUrl(id));
   return `    <item>\n`
     + `      <g:id>${xml(id)}</g:id>\n`

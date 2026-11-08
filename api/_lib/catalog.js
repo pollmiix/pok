@@ -64,7 +64,7 @@ async function publishedCatalog() {
     byId.set(product.id, { ...local, ...product,
       images: Array.isArray(product.images) && product.images.length ? product.images : local.images || [] });
   }
-  return [...byId.values()];
+  return [...byId.values()].map(require('../../product-info').publicProduct);
 }
 
 const siteUrl = () => {

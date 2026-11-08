@@ -88,7 +88,13 @@ async function unlock(token) {
 const digest = value => crypto.createHash('sha256').update(value).digest('hex');
 const publicOrder = order => {
   const { paymentTokenHash, requestHash, ...visible } = order;
-  return visible;
+  const { publicText } = require('../../product-info');
+  return { ...visible,
+    ...(typeof visible.productName === 'string' ? { productName: publicText(visible.productName) } : {}),
+    ...(Array.isArray(visible.items) ? { items: visible.items.map(item => ({ ...item,
+      ...(typeof item.productName === 'string' ? { productName: publicText(item.productName) } : {})
+    })) } : {})
+  };
 };
 
 function validDocument(document) {

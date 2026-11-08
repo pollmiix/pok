@@ -1,9 +1,18 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
+    "api/storefront.js": { "includeFiles": "{index.html,catalog.js,catalog-galleries.js}" },
     "api/visits.js": { "maxDuration": 60 }
   },
   "rewrites": [
+    {
+      "source": "/",
+      "destination": "/api/storefront"
+    },
+    {
+      "source": "/index.html",
+      "destination": "/api/storefront"
+    },
     {
       "source": "/produto/:id",
       "destination": "/api/product?id=:id"

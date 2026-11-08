@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const payments = require('./_lib/payments');
 const pricing = require('../pricing');
+const { publicProduct } = require('../product-info');
 const { normalizeInventory, applyConfirmedInventory } = require('./_lib/catalog');
 
 const AUTH_COOKIE = 'walkcards_admin';
@@ -130,7 +131,7 @@ async function createOrder(req, res) {
     if (previous.gateway === 'blackcat' && !previous.payment?.copyPaste) {
       return sendJson(res, 409, { error: `O pedido ${previous.id} aguarda conferência da cobrança pela loja. Não refaça o pedido.` });
     }
-    return sendJson(res, 200, { order: payments.publicOrder(previous), products });
+    return sendJson(res, 200, { order: payments.publicOrder(previous), products: products.map(publicProduct) });
   }
   const items = [];
   for (const requested of body.items) {
@@ -189,7 +190,7 @@ async function createOrder(req, res) {
       return sendJson(res, 503, { error: `O pedido ${order.id} foi registrado, mas a cobrança precisa ser conferida pela loja. Não refaça o pedido; entre em contato informando esse número.` });
     }
   }
-  return sendJson(res, 201, { order: payments.publicOrder(order), products });
+  return sendJson(res, 201, { order: payments.publicOrder(order), products: products.map(publicProduct) });
 }
 
 module.exports = async function handler(req, res) {
@@ -207,7 +208,7 @@ module.exports = async function handler(req, res) {
       const rawProducts = await readArray(PRODUCTS_KEY);
       const inventoryPreset = await redisCommand(['GET', INVENTORY_PRESET_KEY]);
       const products = rawProducts ? normalizeInventory(rawProducts, inventoryPreset) : null;
-      if (!authenticated(req)) return sendJson(res, 200, { products, inventoryPreset });
+      if (!authenticated(req)) return sendJson(res, 200, { products: products?.map(publicProduct) ?? null, inventoryPreset });
       const sales = await readArray(ORDERS_KEY);
       return sendJson(res, 200, { products, sales: (sales || []).filter(order => !order.archivedAt),
         orderHistoryInitialized: sales !== null, inventoryPreset });
